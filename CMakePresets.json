@@ -1,0 +1,350 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "_base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}"
+    },
+    {
+      "name": "_clang_x86",
+      "hidden": true,
+      "condition": {
+        "type": "equals",
+        "lhs": "$env{VSINSTALLDIR}",
+        "rhs": ""
+      },
+      "generator": "Ninja",
+      "toolchainFile": "common_cmake/clang-x86.cmake"
+    },
+    {
+      "name": "_clang_x64",
+      "hidden": true,
+      "condition": {
+        "type": "equals",
+        "lhs": "$env{VSINSTALLDIR}",
+        "rhs": ""
+      },
+      "generator": "Ninja",
+      "toolchainFile": "common_cmake/clang-x64.cmake"
+    },
+    {
+      "name": "_clang_cross_x86",
+      "hidden": true,
+      "condition": {
+        "type": "notEquals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "cacheVariables": {
+        "MSVC_WINE_ENV_SCRIPT": "/win-sdk/bin/x86/msvcenv.sh"
+      },
+      "generator": "Ninja",
+      "toolchainFile": "common_cmake/clang-cross-x86.cmake"
+    },
+    {
+      "name": "_clang_cross_x64",
+      "hidden": true,
+      "condition": {
+        "type": "notEquals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "cacheVariables": {
+        "MSVC_WINE_ENV_SCRIPT": "/win-sdk/bin/x64/msvcenv.sh"
+      },
+      "generator": "Ninja",
+      "toolchainFile": "common_cmake/clang-cross-x64.cmake"
+    },
+    {
+      "name": "_llvm_mingw_x86",
+      "hidden": true,
+      "condition": {
+        "type": "notEquals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "toolchainFile": "common_cmake/llvm-i686-w64-mingw32.cmake"
+    },
+    {
+      "name": "_llvm_mingw_x64",
+      "hidden": true,
+      "condition": {
+        "type": "notEquals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "toolchainFile": "common_cmake/llvm-x86_64-w64-mingw32.cmake"
+    },
+    {
+      "name": "_mingw_x86",
+      "hidden": true,
+      "condition": {
+        "type": "notEquals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "toolchainFile": "common_cmake/i686-w64-mingw32.cmake"
+    },
+    {
+      "name": "_mingw_x64",
+      "hidden": true,
+      "condition": {
+        "type": "notEquals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "toolchainFile": "common_cmake/x86_64-w64-mingw32.cmake"
+    },
+    {
+      "name": "_msvc",
+      "hidden": true,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "generator": "Ninja",
+      "toolchainFile": "common_cmake/msvc.cmake"
+    },
+    {
+      "name": "_willow",
+      "hidden": true,
+      "architecture": {
+        "value": "Win32",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "UNREALSDK_FLAVOUR": "WILLOW",
+        "UNREALSDK_ARCH": "x86"
+      }
+    },
+    {
+      "name": "_oak",
+      "hidden": true,
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "UNREALSDK_FLAVOUR": "OAK",
+        "UNREALSDK_ARCH": "x64"
+      }
+    },
+    {
+      "name": "_debug",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "_release",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "clang-willow-debug",
+      "displayName": "Willow Debug (Clang)",
+      "inherits": [
+        "_base",
+        "_clang_x86",
+        "_willow",
+        "_debug"
+      ]
+    },
+    {
+      "name": "clang-willow-release",
+      "displayName": "Willow Release (Clang)",
+      "inherits": [
+        "_base",
+        "_clang_x86",
+        "_willow",
+        "_release"
+      ]
+    },
+    {
+      "name": "clang-oak-debug",
+      "displayName": "Oak Debug (Clang)",
+      "inherits": [
+        "_base",
+        "_clang_x64",
+        "_oak",
+        "_debug"
+      ]
+    },
+    {
+      "name": "clang-oak-release",
+      "displayName": "Oak Release (Clang)",
+      "inherits": [
+        "_base",
+        "_clang_x64",
+        "_oak",
+        "_release"
+      ]
+    },
+    {
+      "name": "clang-cross-willow-debug",
+      "displayName": "Willow Debug (Clang Cross Compiler)",
+      "inherits": [
+        "_base",
+        "_clang_cross_x86",
+        "_willow",
+        "_debug"
+      ]
+    },
+    {
+      "name": "clang-cross-willow-release",
+      "displayName": "Willow Release (Clang Cross Compiler)",
+      "inherits": [
+        "_base",
+        "_clang_cross_x86",
+        "_willow",
+        "_release"
+      ]
+    },
+    {
+      "name": "clang-cross-oak-debug",
+      "displayName": "Oak Debug (Clang Cross Compiler)",
+      "inherits": [
+        "_base",
+        "_clang_cross_x64",
+        "_oak",
+        "_debug"
+      ]
+    },
+    {
+      "name": "clang-cross-oak-release",
+      "displayName": "Oak Release (Clang Cross Compiler)",
+      "inherits": [
+        "_base",
+        "_clang_cross_x64",
+        "_oak",
+        "_release"
+      ]
+    },
+    {
+      "name": "llvm-mingw-willow-debug",
+      "displayName": "Willow Debug (LLVM MinGW)",
+      "inherits": [
+        "_base",
+        "_llvm_mingw_x86",
+        "_willow",
+        "_debug"
+      ]
+    },
+    {
+      "name": "llvm-mingw-willow-release",
+      "displayName": "Willow Release (LLVM MinGW)",
+      "inherits": [
+        "_base",
+        "_llvm_mingw_x86",
+        "_willow",
+        "_release"
+      ]
+    },
+    {
+      "name": "llvm-mingw-oak-debug",
+      "displayName": "Oak Debug (LLVM MinGW)",
+      "inherits": [
+        "_base",
+        "_llvm_mingw_x64",
+        "_oak",
+        "_debug"
+      ]
+    },
+    {
+      "name": "llvm-mingw-oak-release",
+      "displayName": "Oak Release (LLVM MinGW)",
+      "inherits": [
+        "_base",
+        "_llvm_mingw_x64",
+        "_oak",
+        "_release"
+      ]
+    },
+    {
+      "name": "mingw-willow-debug",
+      "displayName": "Willow Debug (MinGW)",
+      "inherits": [
+        "_base",
+        "_mingw_x86",
+        "_willow",
+        "_debug"
+      ]
+    },
+    {
+      "name": "mingw-willow-release",
+      "displayName": "Willow Release (MinGW)",
+      "inherits": [
+        "_base",
+        "_mingw_x86",
+        "_willow",
+        "_release"
+      ]
+    },
+    {
+      "name": "mingw-oak-debug",
+      "displayName": "Oak Debug (MinGW)",
+      "inherits": [
+        "_base",
+        "_mingw_x64",
+        "_oak",
+        "_debug"
+      ]
+    },
+    {
+      "name": "mingw-oak-release",
+      "displayName": "Oak Release (MinGW)",
+      "inherits": [
+        "_base",
+        "_mingw_x64",
+        "_oak",
+        "_release"
+      ]
+    },
+    {
+      "name": "msvc-willow-debug",
+      "displayName": "Willow Debug (MSVC)",
+      "inherits": [
+        "_base",
+        "_msvc",
+        "_willow",
+        "_debug"
+      ]
+    },
+    {
+      "name": "msvc-willow-release",
+      "displayName": "Willow Release (MSVC)",
+      "inherits": [
+        "_base",
+        "_msvc",
+        "_willow",
+        "_release"
+      ]
+    },
+    {
+      "name": "msvc-oak-debug",
+      "displayName": "Oak Debug (MSVC)",
+      "inherits": [
+        "_base",
+        "_msvc",
+        "_oak",
+        "_debug"
+      ]
+    },
+    {
+      "name": "msvc-oak-release",
+      "displayName": "Oak Release (MSVC)",
+      "inherits": [
+        "_base",
+        "_msvc",
+        "_oak",
+        "_release"
+      ]
+    }
+  ]
+}

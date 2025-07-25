@@ -1,0 +1,23 @@
+{
+  "template": "https://github.com/bl-sdk/common_dotfiles",
+  "commit": "597ec422d3b5692927f325b9b5c2ae42288e8cc5",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "_jinja2_env_vars": {
+        "lstrip_blocks": true,
+        "trim_blocks": true
+      },
+      "_extensions": [
+        "cookiecutter.extensions.SlugifyExtension"
+      ],
+      "project_name": "live_object_explorer",
+      "__project_slug": "live_object_explorer",
+      "include_cpp": true,
+      "include_py": false,
+      "_template": "https://github.com/bl-sdk/common_dotfiles",
+      "_commit": "597ec422d3b5692927f325b9b5c2ae42288e8cc5"
+    }
+  },
+  "directory": null
+}
