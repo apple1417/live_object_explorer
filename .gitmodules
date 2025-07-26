@@ -1,3 +1,10 @@
 [submodule "common_cmake"]
 	path = common_cmake
 	url = https://github.com/bl-sdk/common_cmake
+[submodule "libs/minhook"]
+	path = libs/minhook
+	url = https://github.com/TsudaKageyu/minhook.git
+[submodule "libs/imgui"]
+	path = libs/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = docking

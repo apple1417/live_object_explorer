@@ -34,10 +34,35 @@ if(MINGW)
     target_compile_options(live_object_explorer PRIVATE -Werror)
 endif()
 
-file(GLOB_RECURSE sources CONFIGURE_DEPENDS "src/*.cpp" "src/pyunrealsdk*.h")
+
+add_library(imgui OBJECT
+    "libs/imgui/imgui_demo.cpp"
+    "libs/imgui/imgui_draw.cpp"
+    "libs/imgui/imgui_tables.cpp"
+    "libs/imgui/imgui_widgets.cpp"
+    "libs/imgui/imgui.cpp"
+    "libs/imgui/backends/imgui_impl_dx11.cpp"
+    "libs/imgui/backends/imgui_impl_dx12.cpp"
+    "libs/imgui/backends/imgui_impl_win32.cpp"
+)
+target_include_directories(imgui PUBLIC "libs/imgui" "libs/imgui/backends")
+
+add_subdirectory(libs/minhook EXCLUDE_FROM_ALL)
+
+file(GLOB_RECURSE sources CONFIGURE_DEPENDS "src/*.cpp" "src/*.h")
 target_sources(live_object_explorer PUBLIC ${sources})
+target_include_directories(live_object_explorer PUBLIC "src")
 
 target_precompile_headers(live_object_explorer PUBLIC "src/pch.h")
+target_link_libraries(live_object_explorer PUBLIC
+    minhook
+    imgui
+
+    dxguid.lib
+    dxgi.lib
+    d3d11.lib
+    d3d12.lib
+)
 
 install(
     TARGETS live_object_explorer

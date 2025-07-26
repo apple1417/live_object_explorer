@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "injected_imgui/hook.h"
 
 namespace {
 
@@ -11,6 +12,7 @@ HMODULE this_module;
  * @return unused.
  */
 DWORD WINAPI startup_thread(LPVOID /*unused*/) {
+    injected_imgui::hook();
     return 1;
 }
 
@@ -38,4 +40,3 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD ul_reason_for_call, LPVOID /*unuse
     }
     return TRUE;
 }
-
