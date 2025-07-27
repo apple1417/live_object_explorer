@@ -3,7 +3,7 @@
 
 namespace live_object_explorer::gui {
 
-bool is_open(void) {
+bool is_showing(void) {
     return true;
 }
 

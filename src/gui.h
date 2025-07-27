@@ -8,7 +8,7 @@ namespace live_object_explorer::gui {
  *
  * @return True if the gui is open.
  */
-bool is_open(void);
+bool is_showing(void);
 
 /**
  * @brief Renders the gui.
