@@ -279,7 +279,7 @@ HRESULT swap_chain_present_hook(IDXGISwapChain3* self, UINT sync_interval, UINT 
 
             live_object_explorer::gui::render();
 
-            ImGui::EndFrame();
+            ImGui::Render();
 
             auto& current_frame_context = dx::framebuffers[self->GetCurrentBackBufferIndex()];
             current_frame_context.command_allocator->Reset();
@@ -303,7 +303,6 @@ HRESULT swap_chain_present_hook(IDXGISwapChain3* self, UINT sync_interval, UINT 
                 1, &current_frame_context.main_render_target_descriptor, FALSE, nullptr);
             dx::command_list->SetDescriptorHeaps(1, &dx::srv_desc_heap);
 
-            ImGui::Render();
             ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dx::command_list);
 
             barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
@@ -314,11 +313,6 @@ HRESULT swap_chain_present_hook(IDXGISwapChain3* self, UINT sync_interval, UINT 
 
             dx::command_queue->ExecuteCommandLists(
                 1, reinterpret_cast<ID3D12CommandList**>(&dx::command_list));
-
-            if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0) {
-                ImGui::UpdatePlatformWindows();
-                ImGui::RenderPlatformWindowsDefault();
-            }
         }
     } catch (const std::exception& ex) {
         std::cerr << "[dhf] Exception occured during render loop: " << ex.what() << "\n";
