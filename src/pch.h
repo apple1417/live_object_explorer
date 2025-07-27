@@ -9,6 +9,8 @@
 #include <d3d12.h>
 #include <dxgi1_4.h>
 
+#include "MinHook.h"
+
 #ifdef __cplusplus
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
@@ -22,7 +24,9 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND h_wnd,
                                                              LPARAM l_param);
 
 #include <cstdint>
+#include <format>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 using std::int16_t;

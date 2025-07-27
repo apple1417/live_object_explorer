@@ -41,6 +41,7 @@ add_library(imgui OBJECT
     "libs/imgui/imgui_tables.cpp"
     "libs/imgui/imgui_widgets.cpp"
     "libs/imgui/imgui.cpp"
+    "libs/imgui/backends/imgui_impl_dx9.cpp"
     "libs/imgui/backends/imgui_impl_dx11.cpp"
     "libs/imgui/backends/imgui_impl_dx12.cpp"
     "libs/imgui/backends/imgui_impl_win32.cpp"
@@ -60,8 +61,6 @@ target_link_libraries(live_object_explorer PUBLIC
 
     dxguid.lib
     dxgi.lib
-    d3d11.lib
-    d3d12.lib
 )
 
 install(

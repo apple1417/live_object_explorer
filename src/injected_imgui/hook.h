@@ -12,6 +12,11 @@ enum class Api : uint8_t {
     DX12,
 };
 
+// NOLINTNEXTLINE(readability-identifier-naming)
+class inject_error : public std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
+
 /**
  * @brief Injects imgui into the current process.
  *

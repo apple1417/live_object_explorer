@@ -23,7 +23,7 @@ Api autodetect_api(void) {
         return Api::DX9;
     }
 
-    return Api::AUTO;
+    throw inject_error("unable to detect graphics api");
 }
 
 }  // namespace
@@ -33,16 +33,21 @@ void hook(Api api) {
         api = autodetect_api();
     }
 
+    if (MH_Initialize() != MH_OK) {
+        throw inject_error("minhook initialization failed");
+    }
+
     switch (api) {
         case Api::AUTO:
-            throw std::runtime_error("Unable to detect graphics api!");
+            // should be impossible
+            break;
 
         case Api::DX12:
             dx12::hook();
             break;
 
         default:
-            throw std::runtime_error("Unimplemented graphics api!");
+            throw inject_error("unimplemented graphics api");
     }
 }
 
