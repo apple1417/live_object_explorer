@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "injected_imgui/hook.h"
-#include "imgui.h"
+#include "injected_imgui/dx11.h"
 #include "injected_imgui/dx12.h"
 
 namespace injected_imgui {
@@ -59,6 +59,10 @@ void hook(Api api) {
     switch (api) {
         case Api::AUTO:
             // should be impossible
+            break;
+
+        case Api::DX11:
+            dx11::hook();
             break;
 
         case Api::DX12:
