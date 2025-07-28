@@ -5,9 +5,6 @@
 
 #include "gui.h"
 
-// TODO
-#include <iostream>
-
 using namespace injected_imgui::internal;
 
 namespace injected_imgui::dx11 {
@@ -28,21 +25,22 @@ bool initalized = false;
  */
 bool create_main_render_view(IDXGISwapChain* swap_chain) {
     ID3D11Texture2D* back_buffer{};
-    auto ret =
-        swap_chain->GetBuffer(0, IID_ID3D11Texture2D, reinterpret_cast<void**>(&back_buffer));
-    if (ret != S_OK) {
-        std::cerr << "[dhf] DX11 hook initalization failed: Couldn't get texture buffer (" << ret
-                  << ")!\n";
+    if (auto ret =
+            swap_chain->GetBuffer(0, IID_ID3D11Texture2D, reinterpret_cast<void**>(&back_buffer))
+            != S_OK) {
+        LOG(ERROR, "DX11 hook initalization failed: Couldn't get texture buffer ({})", ret);
         return false;
     }
+    const RaiiLambda raii{[&back_buffer]() {
+        if (back_buffer != nullptr) {
+            back_buffer->Release();
+            back_buffer = nullptr;
+        }
+    }};
 
-    ret = device->CreateRenderTargetView(back_buffer, nullptr, &main_render_view);
-    // Make sure to release regardless
-    back_buffer->Release();
-
-    if (ret != S_OK) {
-        std::cerr << "[dhf] DX11 hook initalization failed: Couldn't create render target (" << ret
-                  << ")!\n";
+    if (auto ret =
+            device->CreateRenderTargetView(back_buffer, nullptr, &main_render_view) != S_OK) {
+        LOG(ERROR, "DX11 hook initalization failed: Couldn't create render target ({})", ret);
         return false;
     }
 
@@ -65,14 +63,13 @@ bool ensure_initalized(IDXGISwapChain* swap_chain) {
     DXGI_SWAP_CHAIN_DESC desc;
     auto ret = swap_chain->GetDesc(&desc);
     if (ret != S_OK) {
-        std::cerr << "[dhf] DX11 hook initalization failed: Couldn't get swap chain descriptor ("
-                  << ret << ")!\n";
+        LOG(ERROR, "DX11 hook initalization failed: Couldn't get swap chain descriptor ({})", ret);
         return false;
     }
 
     ret = swap_chain->GetDevice(IID_ID3D11Device, reinterpret_cast<void**>(&device));
     if (ret != S_OK) {
-        std::cerr << "[dhf] DX11 hook initalization failed: Couldn't get device (" << ret << ")!\n";
+        LOG(ERROR, "DX11 hook initalization failed: Couldn't get device ({})", ret);
         return false;
     }
 
@@ -85,12 +82,10 @@ bool ensure_initalized(IDXGISwapChain* swap_chain) {
     }
 
     if (!init_win32_backend(desc.OutputWindow)) {
-        std::cerr << "[dhf] DX11 hook initalization failed: Failed to replace winproc (" << ret
-                  << ")!\n";
         return false;
     }
     if (!ImGui_ImplDX11_Init(device, context)) {
-        std::cerr << "[dhf] DX11 hook initalization failed: ImGui dx11 init failed!\n";
+        LOG(ERROR, "DX11 hook initalization failed: ImGui DX11 init failed");
         return false;
     }
 
@@ -134,7 +129,9 @@ HRESULT swap_chain_present_hook(IDXGISwapChain* self, UINT sync_interval, UINT f
             ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
         }
     } catch (const std::exception& ex) {
-        std::cerr << "[dhf] Exception occured during render loop: " << ex.what() << "\n";
+        LOG(ERROR, "Exception occured during DX11 render loop: {}", ex.what());
+    } catch (...) {
+        LOG(ERROR, "Unknown exception occured during DX11 render loop");
     }
 
     return original_swap_chain_present(self, sync_interval, flags);
@@ -197,7 +194,7 @@ HRESULT swap_chain_resize_buffers_hook(IDXGISwapChain* self,
 
 // =================================================================================================
 
-void hook(void) {
+bool hook(void) {
     const WNDCLASSEX window_class = {
         .cbSize = sizeof(WNDCLASSEX),
         .style = CS_HREDRAW | CS_VREDRAW,
@@ -229,14 +226,16 @@ void hook(void) {
 
     HMODULE d3d11_module = GetModuleHandleA("d3d11.dll");
     if (d3d11_module == nullptr) {
-        throw inject_error("couldn't find d3d11.dll");
+        LOG(ERROR, "DX11 hook initalization failed: Couldn't find d3d11.dll");
+        return false;
     }
 
     auto d3d11_create_device_and_swap_chain =
         reinterpret_cast<decltype(D3D11CreateDeviceAndSwapChain)*>(
             GetProcAddress(d3d11_module, "D3D11CreateDeviceAndSwapChain"));
     if (d3d11_create_device_and_swap_chain == nullptr) {
-        throw inject_error("couldn't find D3D11CreateDeviceAndSwapChain");
+        LOG(ERROR, "DX11 hook initalization failed: Couldn't find D3D11CreateDeviceAndSwapChain");
+        return false;
     }
 
     const D3D_FEATURE_LEVEL feature_levels[] = {D3D_FEATURE_LEVEL_11_0};
@@ -269,14 +268,25 @@ void hook(void) {
             sizeof(feature_levels) / sizeof(feature_levels[0]), D3D11_SDK_VERSION, &swap_chain_desc,
             &swap_chain, nullptr, nullptr, nullptr)
         != S_OK) {
-        throw inject_error("couldn't create dx11 swap chain");
+        LOG(ERROR, "DX11 hook initalization failed: Couldn't create swap chain");
+        return false;
     }
+    const RaiiLambda raii3{[&swap_chain]() {
+        if (swap_chain != nullptr) {
+            swap_chain->Release();
+            swap_chain = nullptr;
+        }
+    }};
 
     uintptr_t* swap_chain_vftable = *reinterpret_cast<uintptr_t**>(swap_chain);
-    detour(swap_chain_vftable[SWAP_CHAIN_PRESENT_VF_INDEX], &swap_chain_present_hook,
-           &original_swap_chain_present, SWAP_CHAIN_PRESENT_NAME);
-    detour(swap_chain_vftable[SWAP_CHAIN_RESIZE_BUFFERS_VF_INDEX], &swap_chain_resize_buffers_hook,
-           &original_swap_chain_resize_buffers, SWAP_CHAIN_RESIZE_BUFFERS_NAME);
+    unrealsdk::memory::detour(swap_chain_vftable[SWAP_CHAIN_PRESENT_VF_INDEX],
+                              &swap_chain_present_hook, &original_swap_chain_present,
+                              SWAP_CHAIN_PRESENT_NAME);
+    unrealsdk::memory::detour(swap_chain_vftable[SWAP_CHAIN_RESIZE_BUFFERS_VF_INDEX],
+                              &swap_chain_resize_buffers_hook, &original_swap_chain_resize_buffers,
+                              SWAP_CHAIN_RESIZE_BUFFERS_NAME);
+
+    return true;
 }
 
 }  // namespace injected_imgui::dx11

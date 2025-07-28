@@ -5,8 +5,10 @@ namespace injected_imgui::dx12 {
 
 /**
  * @brief Hooks DX12 rendering.
+ *
+ * @return True if hooked successfully.
  */
-void hook(void);
+bool hook(void);
 
 }  // namespace injected_imgui::dx12
 

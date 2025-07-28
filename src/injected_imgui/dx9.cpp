@@ -5,9 +5,6 @@
 
 #include "gui.h"
 
-// TODO
-#include <iostream>
-
 using namespace injected_imgui::internal;
 
 namespace injected_imgui::dx9 {
@@ -30,8 +27,8 @@ bool ensure_initalized(IDirect3DDevice9* device) {
     run_once = true;
 
     IDirect3DSwapChain9* swap_chain = nullptr;
-    if (device->GetSwapChain(0, &swap_chain) != D3D_OK) {
-        std::cerr << "failed to get swap chain";
+    if (auto ret = device->GetSwapChain(0, &swap_chain) != D3D_OK) {
+        LOG(ERROR, "DX9 hook initalization failed: Failed to get swap chain ({})", ret);
         return false;
     }
     const RaiiLambda raii{[&swap_chain]() {
@@ -42,8 +39,8 @@ bool ensure_initalized(IDirect3DDevice9* device) {
     }};
 
     D3DPRESENT_PARAMETERS params;
-    if (swap_chain->GetPresentParameters(&params) != D3D_OK) {
-        std::cerr << "failed to get preset params";
+    if (auto ret = swap_chain->GetPresentParameters(&params) != D3D_OK) {
+        LOG(ERROR, "DX9 hook initalization failed: failed to get preset params ({})", ret);
         return false;
     }
 
@@ -52,7 +49,7 @@ bool ensure_initalized(IDirect3DDevice9* device) {
     }
 
     if (!ImGui_ImplDX9_Init(device)) {
-        std::cerr << "[dhf] DX9 hook initalization failed: ImGui dx9 init failed!\n";
+        LOG(ERROR, "DX9 hook initalization failed: ImGui dx9 init failed");
         return false;
     }
 
@@ -96,7 +93,9 @@ HRESULT __stdcall device_end_scene_hook(IDirect3DDevice9* self) {
             ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
         }
     } catch (const std::exception& ex) {
-        std::cerr << "[dhf] Exception occured during render loop: " << ex.what() << "\n";
+        LOG(ERROR, "Exception occured during DX9 render loop: {}", ex.what());
+    } catch (...) {
+        LOG(ERROR, "Unknown exception occured during DX9 render loop");
     }
 
     return original_device_end_scene(self);
@@ -104,7 +103,7 @@ HRESULT __stdcall device_end_scene_hook(IDirect3DDevice9* self) {
 
 }  // namespace
 
-void hook(void) {
+bool hook(void) {
     const WNDCLASSEX window_class = {
         .cbSize = sizeof(WNDCLASSEX),
         .style = CS_HREDRAW | CS_VREDRAW,
@@ -136,18 +135,21 @@ void hook(void) {
 
     HMODULE d3d9_module = GetModuleHandleA("d3d9.dll");
     if (d3d9_module == nullptr) {
-        throw inject_error("couldn't find d3d9.dll");
+        LOG(ERROR, "DX9 hook initalization failed: Couldn't find d3d9.dll");
+        return false;
     }
 
     auto d3d9_create = reinterpret_cast<decltype(Direct3DCreate9)*>(
         GetProcAddress(d3d9_module, "Direct3DCreate9"));
     if (d3d9_create == nullptr) {
-        throw inject_error("couldn't find Direct3DCreate9");
+        LOG(ERROR, "DX9 hook initalization failed: Couldn't find Direct3DCreate9");
+        return false;
     }
 
     IDirect3D9* d3d = d3d9_create(D3D_SDK_VERSION);
     if (d3d == nullptr) {
-        throw inject_error("couldn't create d3d object");
+        LOG(ERROR, "DX9 hook initalization failed: Couldn't create d3d object");
+        return false;
     }
     const RaiiLambda raii3{[&d3d]() {
         if (d3d != nullptr) {
@@ -174,11 +176,13 @@ void hook(void) {
     };
 
     IDirect3DDevice9* device = nullptr;
-    if (d3d->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_NULLREF, window,
-                          D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_DISABLE_DRIVER_MANAGEMENT,
-                          &params, &device)
-        != D3D_OK) {
-        throw inject_error("couldn't create d3d9 device");
+    if (auto ret = d3d->CreateDevice(
+                       D3DADAPTER_DEFAULT, D3DDEVTYPE_NULLREF, window,
+                       D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_DISABLE_DRIVER_MANAGEMENT,
+                       &params, &device)
+                   != D3D_OK) {
+        LOG(ERROR, "DX9 hook initalization failed: couldn't create d3d9 device ({})", ret);
+        return false;
     }
     const RaiiLambda raii4{[&device]() {
         if (device != nullptr) {
@@ -188,8 +192,10 @@ void hook(void) {
     }};
 
     uintptr_t* device_vftable = *reinterpret_cast<uintptr_t**>(device);
-    detour(device_vftable[DEVICE_END_SCENE_VF_INDEX], &device_end_scene_hook,
-           &original_device_end_scene, DEVICE_END_SCENE_NAME);
+    unrealsdk::memory::detour(device_vftable[DEVICE_END_SCENE_VF_INDEX], &device_end_scene_hook,
+                              &original_device_end_scene, DEVICE_END_SCENE_NAME);
+
+    return true;
 }
 
 }  // namespace injected_imgui::dx9

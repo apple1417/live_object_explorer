@@ -4,32 +4,7 @@
 
 #include "gui.h"
 
-// TODO: remove when integrating unrealsdk
-#include <iostream>
-
 namespace injected_imgui::internal {
-
-void detour(uintptr_t addr, void* detour_func, void** original_func, std::string_view name) {
-    if (addr == 0) {
-        throw inject_error(std::format("detour for {} was passed a null address", name));
-    }
-
-    MH_STATUS status = MH_OK;
-
-    status = MH_CreateHook(reinterpret_cast<LPVOID>(addr), detour_func, original_func);
-    if (status != MH_OK) {
-        const char* error = MH_StatusToString(status);
-        throw inject_error(
-            std::format("failed to create detour for {} with error: {}", name, error));
-    }
-
-    status = MH_EnableHook(reinterpret_cast<LPVOID>(addr));
-    if (status != MH_OK) {
-        const char* error = MH_StatusToString(status);
-        throw inject_error(
-            std::format("failed to enable detour for {} with error: {}", name, error));
-    }
-}
 
 namespace {
 
@@ -90,7 +65,7 @@ LRESULT window_proc_hook(HWND h_wnd, UINT u_msg, WPARAM w_param, LPARAM l_param)
 
 bool init_win32_backend(HWND h_wnd) {
     if (!ImGui_ImplWin32_Init(h_wnd)) {
-        std::cerr << "[dhf] hook initalization failed: ImGui win32 init failed!\n";
+        LOG(ERROR, "Win32 hook initalization failed: ImGui win32 init failed");
         return false;
     }
 
@@ -98,7 +73,7 @@ bool init_win32_backend(HWND h_wnd) {
         SetWindowLongPtrA(h_wnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(window_proc_hook)));
 
     if (window_proc_ptr == nullptr) {
-        std::cerr << "[dhf] hook initalization failed: Failed to replace winproc!\n";
+        LOG(ERROR, "Win32 hook initalization failed: Failed to replace winproc");
         return false;
     }
 

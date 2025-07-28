@@ -6,14 +6,7 @@
 
 namespace injected_imgui {
 
-namespace {
-
-/**
- * @brief Attempts to autodetect which graphics api we're using.
- *
- * @return The detected graphics api, or auto if unable to detect.
- */
-Api autodetect_api(void) {
+std::optional<Api> autodetect_api(void) {
     // Go from highest directx down, since later ones can pull in earlier, but not vice versa
     if (GetModuleHandleA("d3d12.dll") != nullptr) {
         return Api::DX12;
@@ -25,20 +18,10 @@ Api autodetect_api(void) {
         return Api::DX9;
     }
 
-    throw inject_error("unable to detect graphics api");
+    return std::nullopt;
 }
 
-}  // namespace
-
-void hook(Api api) {
-    if (api == Api::AUTO) {
-        api = autodetect_api();
-    }
-
-    if (MH_Initialize() != MH_OK) {
-        throw inject_error("minhook initialization failed");
-    }
-
+bool hook(Api api) {
     ImGui_ImplWin32_EnableDpiAwareness();
     float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(
         ::MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY));
@@ -59,19 +42,17 @@ void hook(Api api) {
 
     switch (api) {
         case Api::DX9:
-            dx9::hook();
-            break;
+            return dx9::hook();
 
         case Api::DX11:
-            dx11::hook();
-            break;
+            return dx11::hook();
 
         case Api::DX12:
-            dx12::hook();
-            break;
+            return dx12::hook();
 
         default:
-            throw inject_error("unimplemented graphics api");
+            LOG(ERROR, "Unsupported api for imgui hook");
+            return false;
     }
 }
 

@@ -1,11 +1,6 @@
 #include "pch.h"
 #include "injected_imgui/hook.h"
 
-// TODO: remove when integrating with unrealsdk
-#include <chrono>
-#include <thread>
-#include <iostream>
-
 namespace {
 
 HMODULE this_module;
@@ -18,13 +13,20 @@ HMODULE this_module;
  */
 DWORD WINAPI startup_thread(LPVOID /*unused*/) {
     try {
-        //std::this_thread::sleep_for(std::chrono::seconds(5));
-        volatile bool wait = true;
-        while (wait) {}
-        injected_imgui::hook();
-    } catch (std::exception& ex) {
-        std::cerr << "[Live Object Explorer]" << ex.what();
+        // TODO: swap for command
+        while (!unrealsdk::is_console_ready()) {}
+
+        if (auto api = injected_imgui::autodetect_api()) {
+            injected_imgui::hook(*api);
+        } else {
+            LOG(ERROR, "Failed to autodetect graphics api");
+        }
+    } catch (const std::exception& ex) {
+        LOG(ERROR, "Exception occured during live object explorer initalization: {}", ex.what());
+    } catch (...) {
+        LOG(ERROR, "Unknown exception occured during live object explorer initalization");
     }
+
     return 1;
 }
 

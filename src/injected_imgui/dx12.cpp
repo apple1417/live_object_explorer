@@ -5,9 +5,6 @@
 
 #include "gui.h"
 
-// TODO: replace when integrating unrealsdk
-#include <iostream>
-
 using namespace injected_imgui::internal;
 
 namespace injected_imgui::dx12 {
@@ -71,24 +68,19 @@ bool ensure_initalized(IDXGISwapChain3* swap_chain) {
     // The error handling in this function probably leaves something to be desired
     // As long as we've still got a global reference to it it's not a leak right?
 
-    {
-        auto ret = swap_chain->GetDevice(IID_ID3D12Device, reinterpret_cast<void**>(&dx::device));
-        if (ret != S_OK) {
-            std::cerr << "[dhf] DX12 hook initalization failed: Couldn't get device (" << ret
-                      << ")!\n";
-            return false;
-        }
+    if (auto ret = swap_chain->GetDevice(IID_ID3D12Device, reinterpret_cast<void**>(&dx::device))
+                   != S_OK) {
+        LOG(ERROR, "DX12 hook initalization failed: Couldn't get device ({})", ret);
+        return false;
     }
 
     UINT buffer_count{};
     HWND h_wnd{};
     {
         DXGI_SWAP_CHAIN_DESC desc;
-        auto ret = swap_chain->GetDesc(&desc);
-        if (ret != S_OK) {
-            std::cerr
-                << "[dhf] DX12 hook initalization failed: Couldn't get swap chain descriptor ("
-                << ret << ")!\n";
+        if (auto ret = swap_chain->GetDesc(&desc) != S_OK) {
+            LOG(ERROR, "DX12 hook initalization failed: Couldn't get swap chain descriptor ({})",
+                ret);
             return false;
         }
 
@@ -106,11 +98,12 @@ bool ensure_initalized(IDXGISwapChain3* swap_chain) {
         D3D12_DESCRIPTOR_HEAP_DESC srv_desc = {D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, buffer_count,
                                                D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 0};
 
-        auto ret = dx::device->CreateDescriptorHeap(&srv_desc, IID_ID3D12DescriptorHeap,
-                                                    reinterpret_cast<void**>(&dx::srv_desc_heap));
-        if (ret != S_OK) {
-            std::cerr << "[dhf] DX12 hook initalization failed: Couldn't get srv heap descriptor ("
-                      << ret << ")!\n";
+        if (auto ret =
+                dx::device->CreateDescriptorHeap(&srv_desc, IID_ID3D12DescriptorHeap,
+                                                 reinterpret_cast<void**>(&dx::srv_desc_heap))
+                != S_OK) {
+            LOG(ERROR, "DX12 hook initalization failed: Couldn't get srv heap descriptor ({})",
+                ret);
             return false;
         }
 
@@ -128,13 +121,15 @@ bool ensure_initalized(IDXGISwapChain3* swap_chain) {
         D3D12_DESCRIPTOR_HEAP_DESC rtv_desc = {D3D12_DESCRIPTOR_HEAP_TYPE_RTV, buffer_count,
                                                D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 1};
 
-        auto ret = dx::device->CreateDescriptorHeap(&rtv_desc, IID_ID3D12DescriptorHeap,
-                                                    reinterpret_cast<void**>(&dx::rtv_desc_desc));
-        if (ret != S_OK) {
-            std::cerr << "[dhf] DX12 hook initalization failed: Couldn't get srv heap descriptor ("
-                      << ret << ")!\n";
+        if (auto ret =
+                dx::device->CreateDescriptorHeap(&rtv_desc, IID_ID3D12DescriptorHeap,
+                                                 reinterpret_cast<void**>(&dx::rtv_desc_desc))
+                != S_OK) {
+            LOG(ERROR, "DX12 hook initalization failed: Couldn't get srv heap descriptor ({})",
+                ret);
             return false;
         }
+
         size_t rtv_descriptor_size =
             dx::device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
         D3D12_CPU_DESCRIPTOR_HANDLE rtv_handle =
@@ -149,38 +144,34 @@ bool ensure_initalized(IDXGISwapChain3* swap_chain) {
 
     {
         ID3D12CommandAllocator* allocator{};
-        auto ret = dx::device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                                      IID_ID3D12CommandAllocator,
-                                                      reinterpret_cast<void**>(&allocator));
-        if (ret != S_OK) {
-            std::cerr << "[dhf] DX12 hook initalization failed: Couldn't get command allocator ("
-                      << ret << ")!\n";
+        if (auto ret = dx::device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                                          IID_ID3D12CommandAllocator,
+                                                          reinterpret_cast<void**>(&allocator))
+                       != S_OK) {
+            LOG(ERROR, "DX12 hook initalization failed: Couldn't get command allocator ({})", ret);
             return false;
         }
 
         for (auto& frame_ctx : dx::framebuffers) {
             frame_ctx.command_allocator = nullptr;
-            ret = dx::device->CreateCommandAllocator(
-                D3D12_COMMAND_LIST_TYPE_DIRECT, IID_ID3D12CommandAllocator,
-                reinterpret_cast<void**>(&frame_ctx.command_allocator));
-            if (ret != S_OK) {
-                std::cerr
-                    << "[dhf] DX12 hook initalization failed: Couldn't create command allocator ("
-                    << ret << ")!\n";
+            if (auto ret = dx::device->CreateCommandAllocator(
+                               D3D12_COMMAND_LIST_TYPE_DIRECT, IID_ID3D12CommandAllocator,
+                               reinterpret_cast<void**>(&frame_ctx.command_allocator))
+                           != S_OK) {
+                LOG(ERROR, "DX12 hook initalization failed: Couldn't create command allocator ({})",
+                    ret);
                 return false;
             }
         }
     }
 
-    {
-        auto ret = dx::device->CreateCommandList(
-            0, D3D12_COMMAND_LIST_TYPE_DIRECT, dx::framebuffers[0].command_allocator, nullptr,
-            IID_ID3D12GraphicsCommandList, reinterpret_cast<void**>(&dx::command_list));
-        if (ret != S_OK) {
-            std::cerr << "[dhf] DX12 hook initalization failed: Couldn't create command list ("
-                      << ret << ")!\n";
-            return false;
-        }
+    if (auto ret = dx::device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT,
+                                                 dx::framebuffers[0].command_allocator, nullptr,
+                                                 IID_ID3D12GraphicsCommandList,
+                                                 reinterpret_cast<void**>(&dx::command_list))
+                   != S_OK) {
+        LOG(ERROR, "DX12 hook initalization failed: Couldn't create command list ({})", ret);
+        return false;
     }
 
     ImGui_ImplDX12_InitInfo init_info = {};
@@ -205,7 +196,7 @@ bool ensure_initalized(IDXGISwapChain3* swap_chain) {
         size_t cpu_idx = (size_t)((cpu_handle.ptr - dx::heap_start_cpu.ptr) / dx::heap_increment);
         size_t gpu_idx = (size_t)((gpu_handle.ptr - dx::heap_start_gpu.ptr) / dx::heap_increment);
         if (cpu_idx != gpu_idx) {
-            std::cerr << "dx12 heap free gpu idx was different to cpu\n";
+            LOG(ERROR, "DX12 heap free gpu idx was different to cpu");
         }
         dx::heap_free_indexes.push_back(cpu_idx);
     };
@@ -236,13 +227,8 @@ const constexpr std::string_view CMD_QUEUE_EXEC_NAME = "ID3D12CommandQueue::Exec
 void cmd_queue_exec_hook(ID3D12CommandQueue* self,
                          UINT num_command_lists,
                          ID3D12CommandList* const* commmand_lists) {
-    try {
-        if (dx::command_queue == nullptr
-            && self->GetDesc().Type == D3D12_COMMAND_LIST_TYPE_DIRECT) {
-            dx::command_queue = self;
-        }
-    } catch (const std::exception& ex) {
-        std::cerr << "[dhf] Exception occured during command queue hook " << ex.what() << "\n";
+    if (dx::command_queue == nullptr && self->GetDesc().Type == D3D12_COMMAND_LIST_TYPE_DIRECT) {
+        dx::command_queue = self;
     }
 
     original_cmd_queue_exec(self, num_command_lists, commmand_lists);
@@ -313,7 +299,9 @@ HRESULT swap_chain_present_hook(IDXGISwapChain3* self, UINT sync_interval, UINT 
                 1, reinterpret_cast<ID3D12CommandList**>(&dx::command_list));
         }
     } catch (const std::exception& ex) {
-        std::cerr << "[dhf] Exception occured during render loop: " << ex.what() << "\n";
+        LOG(ERROR, "Exception occured during DX12 render loop: {}", ex.what());
+    } catch (...) {
+        LOG(ERROR, "Unknown exception occured during DX12 render loop");
     }
 
     return original_swap_chain_present(self, sync_interval, flags);
@@ -366,7 +354,7 @@ HRESULT swap_chain_resize_buffers_hook(IDXGISwapChain* self,
 
 }  // namespace
 
-void hook(void) {
+bool hook(void) {
     const WNDCLASSEX window_class = {
         .cbSize = sizeof(WNDCLASSEX),
         .style = CS_HREDRAW | CS_VREDRAW,
@@ -398,20 +386,23 @@ void hook(void) {
 
     HMODULE d3d12_module = GetModuleHandleA("d3d12.dll");
     if (d3d12_module == nullptr) {
-        throw inject_error("couldn't find d3d12.dll");
+        LOG(ERROR, "DX12 hook initalization failed: Couldn't find d3d12.dll");
+        return false;
     }
 
     auto d3d12_create_device = reinterpret_cast<decltype(D3D12CreateDevice)*>(
         GetProcAddress(d3d12_module, "D3D12CreateDevice"));
     if (d3d12_create_device == nullptr) {
-        throw inject_error("couldn't find D3D12CreateDevice");
+        LOG(ERROR, "DX12 hook initalization failed: Couldn't find D3D12CreateDevice");
+        return false;
     }
 
     ID3D12Device* hook_device = nullptr;
-    if (d3d12_create_device(nullptr, D3D_FEATURE_LEVEL_12_0, IID_ID3D12Device,
-                            reinterpret_cast<void**>(&hook_device))
-        != S_OK) {
-        throw inject_error("couldn't create d3d12 device");
+    if (auto ret = d3d12_create_device(nullptr, D3D_FEATURE_LEVEL_12_0, IID_ID3D12Device,
+                                       reinterpret_cast<void**>(&hook_device))
+                   != S_OK) {
+        LOG(ERROR, "DX12 hook initalization failed: couldn't create d3d12 device ({})", ret);
+        return false;
     }
     const RaiiLambda raii3{[&hook_device]() {
         if (hook_device != nullptr) {
@@ -428,10 +419,11 @@ void hook(void) {
     };
 
     ID3D12CommandQueue* hook_command_queue = nullptr;
-    if (hook_device->CreateCommandQueue(&queue_desc, IID_ID3D12CommandQueue,
-                                        reinterpret_cast<void**>(&hook_command_queue))
-        != S_OK) {
-        throw inject_error("couldn't create d3d12 device");
+    if (auto ret = hook_device->CreateCommandQueue(&queue_desc, IID_ID3D12CommandQueue,
+                                                   reinterpret_cast<void**>(&hook_command_queue))
+                   != S_OK) {
+        LOG(ERROR, "DX12 hook initalization failed: Couldn't create d3d12 device ({})", ret);
+        return false;
     }
     const RaiiLambda raii4{[&hook_command_queue]() {
         if (hook_command_queue != nullptr) {
@@ -441,8 +433,10 @@ void hook(void) {
     }};
 
     IDXGIFactory1* factory = nullptr;
-    if (CreateDXGIFactory1(IID_IDXGIFactory1, reinterpret_cast<void**>(&factory)) != S_OK) {
-        throw inject_error("failed to create dxgi factory");
+    if (auto ret =
+            CreateDXGIFactory1(IID_IDXGIFactory1, reinterpret_cast<void**>(&factory)) != S_OK) {
+        LOG(ERROR, "DX12 hook initalization failed: Failed to create dxgi factory ({})", ret);
+        return false;
     }
     const RaiiLambda raii5{[&factory]() {
         if (factory != nullptr) {
@@ -481,8 +475,10 @@ void hook(void) {
     // NOLINTEND(readability-magic-numbers)
 
     IDXGISwapChain* swap_chain = nullptr;
-    if (factory->CreateSwapChain(hook_command_queue, &swap_chain_desc, &swap_chain) < S_OK) {
-        throw inject_error("failed to create swap chain");
+    if (auto ret =
+            factory->CreateSwapChain(hook_command_queue, &swap_chain_desc, &swap_chain) != S_OK) {
+        LOG(ERROR, "DX12 hook initalization failed: Failed to create swap chain ({})", ret);
+        return false;
     }
     const RaiiLambda raii6{[&swap_chain]() {
         if (swap_chain != nullptr) {
@@ -492,14 +488,18 @@ void hook(void) {
     }};
 
     uintptr_t* command_queue_vftable = *reinterpret_cast<uintptr_t**>(hook_command_queue);
-    detour(command_queue_vftable[CMD_QUEUE_EXEC_VF_IDX], &cmd_queue_exec_hook,
-           &original_cmd_queue_exec, CMD_QUEUE_EXEC_NAME);
+    unrealsdk::memory::detour(command_queue_vftable[CMD_QUEUE_EXEC_VF_IDX], &cmd_queue_exec_hook,
+                              &original_cmd_queue_exec, CMD_QUEUE_EXEC_NAME);
 
     uintptr_t* swap_chain_vftable = *reinterpret_cast<uintptr_t**>(swap_chain);
-    detour(swap_chain_vftable[SWAP_CHAIN_PRESENT_VF_INDEX], &swap_chain_present_hook,
-           &original_swap_chain_present, SWAP_CHAIN_PRESENT_NAME);
-    detour(swap_chain_vftable[SWAP_CHAIN_RESIZE_BUFFERS_VF_INDEX], &swap_chain_resize_buffers_hook,
-           &original_swap_chain_resize_buffers, SWAP_CHAIN_RESIZE_BUFFERS_NAME);
+    unrealsdk::memory::detour(swap_chain_vftable[SWAP_CHAIN_PRESENT_VF_INDEX],
+                              &swap_chain_present_hook, &original_swap_chain_present,
+                              SWAP_CHAIN_PRESENT_NAME);
+    unrealsdk::memory::detour(swap_chain_vftable[SWAP_CHAIN_RESIZE_BUFFERS_VF_INDEX],
+                              &swap_chain_resize_buffers_hook, &original_swap_chain_resize_buffers,
+                              SWAP_CHAIN_RESIZE_BUFFERS_NAME);
+
+    return true;
 }
 
 }  // namespace injected_imgui::dx12

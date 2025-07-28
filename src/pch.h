@@ -1,16 +1,21 @@
 #ifndef PCH_H
 #define PCH_H
 
+// The unrealsdk pch defines NOGDI, but we need it for directx
+// Include windows.h ourself so we can get a version without it, and just undef the problematic
+// ERROR macro
 #define WIN32_LEAN_AND_MEAN
+#define WIN32_NO_STATUS
 #define NOMINMAX
-#include <Windows.h>
+#include <windows.h>
+#undef ERROR
+
+#include <unrealsdk/pch.h>
 
 #include <d3d11.h>
 #include <d3d12.h>
 #include <d3d9.h>
 #include <dxgi1_4.h>
-
-#include "MinHook.h"
 
 #ifdef __cplusplus
 #include <imgui.h>
@@ -25,20 +30,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND h_wnd,
                                                              WPARAM w_param,
                                                              LPARAM l_param);
 
-#include <cstdint>
-#include <format>
-#include <stdexcept>
-#include <string>
-#include <vector>
-
-using std::int16_t;
-using std::int32_t;
-using std::int64_t;
-using std::int8_t;
-using std::uint16_t;
-using std::uint32_t;
-using std::uint64_t;
-using std::uint8_t;
+#include <unrealsdk/memory.h>
+#include <unrealsdk/unrealsdk.h>
 
 #endif
 

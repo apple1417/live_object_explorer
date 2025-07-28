@@ -5,8 +5,10 @@ namespace injected_imgui::dx11 {
 
 /**
  * @brief Hooks DX11 rendering.
+ *
+ * @return True if hooked successfully.
  */
-void hook(void);
+bool hook(void);
 
 }  // namespace injected_imgui::dx11
 

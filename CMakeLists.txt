@@ -48,7 +48,8 @@ add_library(imgui OBJECT
 )
 target_include_directories(imgui PUBLIC "libs/imgui" "libs/imgui/backends")
 
-add_subdirectory(libs/minhook EXCLUDE_FROM_ALL)
+set(UNREALSDK_SHARED True)
+add_subdirectory(libs/unrealsdk EXCLUDE_FROM_ALL)
 
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS "src/*.cpp" "src/*.h")
 target_sources(live_object_explorer PUBLIC ${sources})
@@ -56,8 +57,8 @@ target_include_directories(live_object_explorer PUBLIC "src")
 
 target_precompile_headers(live_object_explorer PUBLIC "src/pch.h")
 target_link_libraries(live_object_explorer PUBLIC
-    minhook
     imgui
+    unrealsdk
 
     dxguid.lib
     dxgi.lib

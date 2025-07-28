@@ -6,23 +6,26 @@
 namespace injected_imgui {
 
 enum class Api : uint8_t {
-    AUTO,
     DX9,
     DX11,
-    DX12,
+    DX12
+
 };
 
-// NOLINTNEXTLINE(readability-identifier-naming)
-class inject_error : public std::runtime_error {
-    using std::runtime_error::runtime_error;
-};
+/**
+ * @brief Attempts to autodetect the in use graphics api.
+ *
+ * @return The detected graphics api, or std::nullopt if unable to detect.
+ */
+std::optional<Api> autodetect_api(void);
 
 /**
  * @brief Injects imgui into the current process.
  *
  * @param api Which graphics api to inject under.
+ * @return True if hooked successfully.
  */
-void hook(Api api = Api::AUTO);
+bool hook(Api api);
 
 }  // namespace injected_imgui
 
