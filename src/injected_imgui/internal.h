@@ -5,6 +5,16 @@
 
 namespace injected_imgui::internal {
 
+// Stdcall doesn't exist for 64bit, so with pedantic warnings some compilers throw one
+// This define is used to remove it when unnecessary
+// Note that MSVC also does not allow a using statement to include calling conventions, so anything
+// referencing this is forced to use a typedef
+#if UINTPTR_MAX == UINT64_MAX
+#define INJECTED_IMGUI_STDCALL
+#else
+#define INJECTED_IMGUI_STDCALL __stdcall
+#endif
+
 template <typename F>
 struct RaiiLambda {
     F func;

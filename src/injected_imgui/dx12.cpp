@@ -193,8 +193,8 @@ bool ensure_initalized(IDXGISwapChain3* swap_chain) {
     init_info.SrvDescriptorFreeFn = [](ImGui_ImplDX12_InitInfo*,
                                        D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle,
                                        D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle) {
-        size_t cpu_idx = (size_t)((cpu_handle.ptr - dx::heap_start_cpu.ptr) / dx::heap_increment);
-        size_t gpu_idx = (size_t)((gpu_handle.ptr - dx::heap_start_gpu.ptr) / dx::heap_increment);
+        auto cpu_idx = (size_t)((cpu_handle.ptr - dx::heap_start_cpu.ptr) / dx::heap_increment);
+        auto gpu_idx = (size_t)((gpu_handle.ptr - dx::heap_start_gpu.ptr) / dx::heap_increment);
         if (cpu_idx != gpu_idx) {
             LOG(ERROR, "DX12 heap free gpu idx was different to cpu");
         }
@@ -213,9 +213,10 @@ bool ensure_initalized(IDXGISwapChain3* swap_chain) {
 
 namespace {
 
-using cmd_queue_exec_func = void (*)(ID3D12CommandQueue* self,
-                                     UINT num_command_lists,
-                                     ID3D12CommandList* const* commmand_lists);
+// NOLINTNEXTLINE(modernize-use-using)
+typedef void(INJECTED_IMGUI_STDCALL* cmd_queue_exec_func)(ID3D12CommandQueue* self,
+                                                          UINT num_command_lists,
+                                                          ID3D12CommandList* const* commmand_lists);
 cmd_queue_exec_func original_cmd_queue_exec;
 
 const constexpr auto CMD_QUEUE_EXEC_VF_IDX = 10;
@@ -224,9 +225,9 @@ const constexpr std::string_view CMD_QUEUE_EXEC_NAME = "ID3D12CommandQueue::Exec
 /**
  * @brief Hook for `ID3D12CommandQueue::ExecuteCommandLists`, used to grab the command queue.
  */
-void cmd_queue_exec_hook(ID3D12CommandQueue* self,
-                         UINT num_command_lists,
-                         ID3D12CommandList* const* commmand_lists) {
+void INJECTED_IMGUI_STDCALL cmd_queue_exec_hook(ID3D12CommandQueue* self,
+                                                UINT num_command_lists,
+                                                ID3D12CommandList* const* commmand_lists) {
     if (dx::command_queue == nullptr && self->GetDesc().Type == D3D12_COMMAND_LIST_TYPE_DIRECT) {
         dx::command_queue = self;
     }
@@ -238,7 +239,10 @@ void cmd_queue_exec_hook(ID3D12CommandQueue* self,
 
 namespace {
 
-using swap_chain_present_func = HRESULT (*)(IDXGISwapChain3* self, UINT sync_interval, UINT flags);
+// NOLINTNEXTLINE(modernize-use-using)
+typedef HRESULT(INJECTED_IMGUI_STDCALL* swap_chain_present_func)(IDXGISwapChain3* self,
+                                                                 UINT sync_interval,
+                                                                 UINT flags);
 swap_chain_present_func original_swap_chain_present;
 
 const constexpr auto SWAP_CHAIN_PRESENT_VF_INDEX = 8;
@@ -247,7 +251,9 @@ const constexpr std::string_view SWAP_CHAIN_PRESENT_NAME = "IDXGISwapChain3::Pre
 /**
  * @brief Hook for `IDXGISwapChain3::Present`, used to inject imgui.
  */
-HRESULT swap_chain_present_hook(IDXGISwapChain3* self, UINT sync_interval, UINT flags) {
+HRESULT INJECTED_IMGUI_STDCALL swap_chain_present_hook(IDXGISwapChain3* self,
+                                                       UINT sync_interval,
+                                                       UINT flags) {
     try {
         static bool nested_call_guard = false;
         if (nested_call_guard) {
@@ -311,12 +317,13 @@ HRESULT swap_chain_present_hook(IDXGISwapChain3* self, UINT sync_interval, UINT 
 
 namespace {
 
-using swap_chain_resize_buffers_func = HRESULT (*)(IDXGISwapChain* self,
-                                                   UINT buffer_count,
-                                                   UINT width,
-                                                   UINT height,
-                                                   DXGI_FORMAT new_format,
-                                                   UINT swap_chain_flags);
+// NOLINTNEXTLINE(modernize-use-using)
+typedef HRESULT(INJECTED_IMGUI_STDCALL* swap_chain_resize_buffers_func)(IDXGISwapChain* self,
+                                                                        UINT buffer_count,
+                                                                        UINT width,
+                                                                        UINT height,
+                                                                        DXGI_FORMAT new_format,
+                                                                        UINT swap_chain_flags);
 swap_chain_resize_buffers_func original_swap_chain_resize_buffers;
 
 const constexpr auto SWAP_CHAIN_RESIZE_BUFFERS_VF_INDEX = 13;
@@ -325,12 +332,12 @@ const constexpr std::string_view SWAP_CHAIN_RESIZE_BUFFERS_NAME = "IDXGISwapChai
 /**
  * @brief Hook for `IDXGISwapChain::ResizeBuffers`, used to handle resizing.
  */
-HRESULT swap_chain_resize_buffers_hook(IDXGISwapChain* self,
-                                       UINT buffer_count,
-                                       UINT width,
-                                       UINT height,
-                                       DXGI_FORMAT new_format,
-                                       UINT swap_chain_flags) {
+HRESULT INJECTED_IMGUI_STDCALL swap_chain_resize_buffers_hook(IDXGISwapChain* self,
+                                                              UINT buffer_count,
+                                                              UINT width,
+                                                              UINT height,
+                                                              DXGI_FORMAT new_format,
+                                                              UINT swap_chain_flags) {
     if (initalized) {
         for (auto& frame : dx::framebuffers) {
             frame.main_render_target_resource->Release();

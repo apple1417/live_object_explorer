@@ -61,9 +61,8 @@ bool ensure_initalized(IDirect3DDevice9* device) {
 
 namespace {
 
-// TODO
 // NOLINTNEXTLINE(modernize-use-using)
-typedef HRESULT(__stdcall* device_end_scene_func)(IDirect3DDevice9* self);
+typedef HRESULT(INJECTED_IMGUI_STDCALL* device_end_scene_func)(IDirect3DDevice9* self);
 device_end_scene_func original_device_end_scene;
 
 const constexpr auto DEVICE_END_SCENE_VF_INDEX = 42;
@@ -72,7 +71,7 @@ const constexpr std::string_view DEVICE_END_SCENE_NAME = "IDirect3DDevice9::EndS
 /**
  * @brief Hook for `IDirect3DDevice9::EndScene`, used to inject imgui.
  */
-HRESULT __stdcall device_end_scene_hook(IDirect3DDevice9* self) {
+HRESULT INJECTED_IMGUI_STDCALL device_end_scene_hook(IDirect3DDevice9* self) {
     try {
         static bool nested_call_guard = false;
         if (nested_call_guard) {

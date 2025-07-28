@@ -97,7 +97,10 @@ bool ensure_initalized(IDXGISwapChain* swap_chain) {
 
 namespace {
 
-using swap_chain_present_func = HRESULT (*)(IDXGISwapChain* self, UINT sync_interval, UINT flags);
+// NOLINTNEXTLINE(modernize-use-using)
+typedef HRESULT(INJECTED_IMGUI_STDCALL* swap_chain_present_func)(IDXGISwapChain* self,
+                                                                 UINT sync_interval,
+                                                                 UINT flags);
 swap_chain_present_func original_swap_chain_present;
 
 const constexpr auto SWAP_CHAIN_PRESENT_VF_INDEX = 8;
@@ -106,7 +109,9 @@ const constexpr std::string_view SWAP_CHAIN_PRESENT_NAME = "IDXGISwapChain::Pres
 /**
  * @brief Hook for `IDXGISwapChain::Present`, used to inject imgui.
  */
-HRESULT swap_chain_present_hook(IDXGISwapChain* self, UINT sync_interval, UINT flags) {
+HRESULT INJECTED_IMGUI_STDCALL swap_chain_present_hook(IDXGISwapChain* self,
+                                                       UINT sync_interval,
+                                                       UINT flags) {
     try {
         static bool nested_call_guard = false;
         if (nested_call_guard) {
@@ -141,12 +146,13 @@ HRESULT swap_chain_present_hook(IDXGISwapChain* self, UINT sync_interval, UINT f
 
 namespace {
 
-using swap_chain_resize_buffers_func = HRESULT (*)(IDXGISwapChain* self,
-                                                   UINT buffer_count,
-                                                   UINT width,
-                                                   UINT height,
-                                                   DXGI_FORMAT new_format,
-                                                   UINT swap_chain_flags);
+// NOLINTNEXTLINE(modernize-use-using)
+typedef HRESULT(INJECTED_IMGUI_STDCALL* swap_chain_resize_buffers_func)(IDXGISwapChain* self,
+                                                                        UINT buffer_count,
+                                                                        UINT width,
+                                                                        UINT height,
+                                                                        DXGI_FORMAT new_format,
+                                                                        UINT swap_chain_flags);
 swap_chain_resize_buffers_func original_swap_chain_resize_buffers;
 
 const constexpr auto SWAP_CHAIN_RESIZE_BUFFERS_VF_INDEX = 13;
@@ -155,12 +161,12 @@ const constexpr std::string_view SWAP_CHAIN_RESIZE_BUFFERS_NAME = "IDXGISwapChai
 /**
  * @brief Hook for `IDXGISwapChain::ResizeBuffers`, used to handle resizing.
  */
-HRESULT swap_chain_resize_buffers_hook(IDXGISwapChain* self,
-                                       UINT buffer_count,
-                                       UINT width,
-                                       UINT height,
-                                       DXGI_FORMAT new_format,
-                                       UINT swap_chain_flags) {
+HRESULT INJECTED_IMGUI_STDCALL swap_chain_resize_buffers_hook(IDXGISwapChain* self,
+                                                              UINT buffer_count,
+                                                              UINT width,
+                                                              UINT height,
+                                                              DXGI_FORMAT new_format,
+                                                              UINT swap_chain_flags) {
     if (initalized) {
         if (main_render_view != nullptr) {
             context->OMSetRenderTargets(0, nullptr, nullptr);
