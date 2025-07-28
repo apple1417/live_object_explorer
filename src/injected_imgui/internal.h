@@ -33,12 +33,12 @@ void detour(uintptr_t addr, T detour_func, T* original_func, std::string_view na
 }
 
 /**
- * @brief Sets up the `WinProc` keyboard/mouse hooks.
+ * @brief Initalizes the win32 imgui backend for the given window.
  *
  * @param h_wnd Handle to the window to hook.
  * @return True if hooked successfully.
  */
-bool hook_win_proc(HWND h_wnd);
+bool init_win32_backend(HWND h_wnd);
 
 }  // namespace injected_imgui::internal
 

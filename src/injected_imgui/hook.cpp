@@ -2,6 +2,7 @@
 #include "injected_imgui/hook.h"
 #include "injected_imgui/dx11.h"
 #include "injected_imgui/dx12.h"
+#include "injected_imgui/dx9.h"
 
 namespace injected_imgui {
 
@@ -57,8 +58,8 @@ void hook(Api api) {
     style.FontScaleDpi = main_scale;
 
     switch (api) {
-        case Api::AUTO:
-            // should be impossible
+        case Api::DX9:
+            dx9::hook();
             break;
 
         case Api::DX11:

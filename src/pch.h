@@ -7,6 +7,7 @@
 
 #include <d3d11.h>
 #include <d3d12.h>
+#include <d3d9.h>
 #include <dxgi1_4.h>
 
 #include "MinHook.h"
@@ -15,6 +16,7 @@
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_dx12.h>
+#include <imgui_impl_dx9.h>
 #include <imgui_impl_win32.h>
 
 // NOLINTNEXTLINE(readability-identifier-naming)

@@ -98,7 +98,7 @@ bool ensure_initalized(IDXGISwapChain3* swap_chain) {
         dx::framebuffers.resize(buffer_count);
     }
 
-    if (!hook_win_proc(h_wnd)) {
+    if (!init_win32_backend(h_wnd)) {
         return false;
     }
 
@@ -183,8 +183,6 @@ bool ensure_initalized(IDXGISwapChain3* swap_chain) {
         }
     }
 
-    ImGui_ImplWin32_Init(h_wnd);
-
     ImGui_ImplDX12_InitInfo init_info = {};
     init_info.Device = dx::device;
     init_info.CommandQueue = dx::command_queue;
@@ -204,8 +202,8 @@ bool ensure_initalized(IDXGISwapChain3* swap_chain) {
     init_info.SrvDescriptorFreeFn = [](ImGui_ImplDX12_InitInfo*,
                                        D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle,
                                        D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle) {
-        size_t cpu_idx = (cpu_handle.ptr - dx::heap_start_cpu.ptr) / dx::heap_increment;
-        size_t gpu_idx = (gpu_handle.ptr - dx::heap_start_gpu.ptr) / dx::heap_increment;
+        size_t cpu_idx = (size_t)((cpu_handle.ptr - dx::heap_start_cpu.ptr) / dx::heap_increment);
+        size_t gpu_idx = (size_t)((gpu_handle.ptr - dx::heap_start_gpu.ptr) / dx::heap_increment);
         if (cpu_idx != gpu_idx) {
             std::cerr << "dx12 heap free gpu idx was different to cpu\n";
         }

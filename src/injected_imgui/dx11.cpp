@@ -84,16 +84,9 @@ bool ensure_initalized(IDXGISwapChain* swap_chain) {
         return false;
     }
 
-    if (!hook_win_proc(desc.OutputWindow)) {
+    if (!init_win32_backend(desc.OutputWindow)) {
         std::cerr << "[dhf] DX11 hook initalization failed: Failed to replace winproc (" << ret
                   << ")!\n";
-        return false;
-    }
-
-    ImGui::CreateContext();
-
-    if (!ImGui_ImplWin32_Init(desc.OutputWindow)) {
-        std::cerr << "[dhf] DX11 hook initalization failed: ImGui win32 init failed!\n";
         return false;
     }
     if (!ImGui_ImplDX11_Init(device, context)) {

@@ -88,15 +88,21 @@ LRESULT window_proc_hook(HWND h_wnd, UINT u_msg, WPARAM w_param, LPARAM l_param)
 
 }  // namespace
 
-bool hook_win_proc(HWND h_wnd) {
+bool init_win32_backend(HWND h_wnd) {
+    if (!ImGui_ImplWin32_Init(h_wnd)) {
+        std::cerr << "[dhf] hook initalization failed: ImGui win32 init failed!\n";
+        return false;
+    }
+
     window_proc_ptr = reinterpret_cast<WNDPROC>(
         SetWindowLongPtrA(h_wnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(window_proc_hook)));
 
     if (window_proc_ptr == nullptr) {
         std::cerr << "[dhf] hook initalization failed: Failed to replace winproc!\n";
+        return false;
     }
 
-    return window_proc_ptr != nullptr;
+    return true;
 }
 
 }  // namespace injected_imgui::internal
