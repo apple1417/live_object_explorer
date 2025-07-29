@@ -4,11 +4,9 @@
 namespace live_object_explorer::gui {
 
 /**
- * @brief Checks if the gui is open.
- *
- * @return True if the gui is open.
+ * @brief Opens the gui, if it isn't already.
  */
-bool is_showing(void);
+void show(void);
 
 /**
  * @brief Renders the gui.

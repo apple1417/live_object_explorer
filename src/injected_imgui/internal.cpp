@@ -17,16 +17,14 @@ LRESULT window_proc_hook(HWND h_wnd, UINT u_msg, WPARAM w_param, LPARAM l_param)
     bool capture_mouse = false;
     bool capture_kb = false;
 
-    if (live_object_explorer::gui::is_showing()) {
-        if (ImGui_ImplWin32_WndProcHandler(h_wnd, u_msg, w_param, l_param) > 0) {
-            return 1;
-        }
-
-        // NOLINTNEXTLINE(readability-identifier-length)
-        auto io = ImGui::GetIO();
-        capture_mouse = io.WantCaptureMouse;
-        capture_kb = io.WantCaptureKeyboard;
+    if (ImGui_ImplWin32_WndProcHandler(h_wnd, u_msg, w_param, l_param) > 0) {
+        return 1;
     }
+
+    // NOLINTNEXTLINE(readability-identifier-length)
+    auto io = ImGui::GetIO();
+    capture_mouse = io.WantCaptureMouse;
+    capture_kb = io.WantCaptureKeyboard;
 
     switch (u_msg) {
         case WM_LBUTTONDBLCLK:

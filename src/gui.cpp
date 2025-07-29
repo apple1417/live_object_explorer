@@ -3,12 +3,22 @@
 
 namespace live_object_explorer::gui {
 
-bool is_showing(void) {
-    return true;
+namespace {
+
+bool showing = false;
+
+}
+
+void show(void) {
+    showing = true;
 }
 
 void render(void) {
-    ImGui::ShowDemoWindow();
+    if (!showing) {
+        return;
+    }
+
+    ImGui::ShowDemoWindow(&showing);
 }
 
 }  // namespace live_object_explorer::gui

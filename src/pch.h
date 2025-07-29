@@ -30,8 +30,11 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND h_wnd,
                                                              WPARAM w_param,
                                                              LPARAM l_param);
 
+#include <unrealsdk/commands.h>
+#include <unrealsdk/config.h>
 #include <unrealsdk/memory.h>
 #include <unrealsdk/unrealsdk.h>
+#include <unrealsdk/utils.h>
 
 #endif
 
