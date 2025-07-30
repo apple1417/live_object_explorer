@@ -23,6 +23,7 @@
 #include <imgui_impl_dx12.h>
 #include <imgui_impl_dx9.h>
 #include <imgui_impl_win32.h>
+#include <imgui_internal.h>
 
 // NOLINTNEXTLINE(readability-identifier-naming)
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND h_wnd,

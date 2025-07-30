@@ -59,6 +59,7 @@ DWORD WINAPI startup_thread(LPVOID /*unused*/) {
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
         theme::apply();
 
@@ -67,6 +68,10 @@ DWORD WINAPI startup_thread(LPVOID /*unused*/) {
         style.FontScaleDpi = main_scale;
 
         injected_imgui::auto_detect::hook(*api);
+
+#ifndef NDEBUG
+        gui::show();
+#endif
 
     } catch (const std::exception& ex) {
         LOG(ERROR, "Exception occured during live object explorer initalization: {}", ex.what());

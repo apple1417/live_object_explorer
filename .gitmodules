@@ -4,6 +4,7 @@
 [submodule "libs/imgui"]
 	path = libs/imgui
 	url = https://github.com/ocornut/imgui.git
+	branch = docking
 [submodule "libs/unrealsdk"]
 	path = libs/unrealsdk
 	url = git@github.com:bl-sdk/unrealsdk.git
