@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "gui.h"
-#include "injected_imgui/hook.h"
+#include "injected_imgui/auto.h"
+#include "theme.h"
 #include "unrealsdk/utils.h"
 
 namespace live_object_explorer {
@@ -24,28 +25,48 @@ DWORD WINAPI startup_thread(LPVOID /*unused*/) {
             LOG(ERROR, "Live Object Explorer: failed to add '{}' command", cmd);
         }
 
-        std::optional<injected_imgui::Api> api{};
+        std::optional<injected_imgui::auto_detect::Api> api{};
         if (auto api_str = unrealsdk::config::get_str("live_object_explorer.api")) {
             if (*api_str == "dx9") {
-                api = injected_imgui::Api::DX9;
+                api = injected_imgui::auto_detect::Api::DX9;
             } else if (*api_str == "dx11") {
-                api = injected_imgui::Api::DX11;
+                api = injected_imgui::auto_detect::Api::DX11;
             } else if (*api_str == "dx12") {
-                api = injected_imgui::Api::DX12;
+                api = injected_imgui::auto_detect::Api::DX12;
             } else {
                 LOG(ERROR, "Live Object Explorer: Unrecognised graphics api: {}", *api_str);
             }
         }
 
         if (!api) {
-            api = injected_imgui::autodetect_api();
+            api = injected_imgui::auto_detect::auto_detect_api();
             if (!api) {
                 LOG(ERROR, "Live Object Explorer: Failed to autodetect graphics api");
                 return 1;
             }
         }
 
-        injected_imgui::hook(*api);
+        theme::init(*api);
+
+        ImGui_ImplWin32_EnableDpiAwareness();
+        float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(
+            ::MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY));
+
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+
+        // NOLINTNEXTLINE(readability-identifier-length)
+        ImGuiIO& io = ImGui::GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+
+        theme::apply();
+
+        ImGuiStyle& style = ImGui::GetStyle();
+        style.ScaleAllSizes(main_scale);
+        style.FontScaleDpi = main_scale;
+
+        injected_imgui::auto_detect::hook(*api);
 
     } catch (const std::exception& ex) {
         LOG(ERROR, "Exception occured during live object explorer initalization: {}", ex.what());

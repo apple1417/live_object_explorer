@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "injected_imgui/dx9.h"
-#include "injected_imgui/hook.h"
 #include "injected_imgui/internal.h"
 
 #include "gui.h"
