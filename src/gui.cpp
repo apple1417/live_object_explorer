@@ -1,102 +1,133 @@
 #include "pch.h"
 #include "gui.h"
-#include "imgui.h"
-#include "imgui_internal.h"
+
+using namespace unrealsdk::unreal;
 
 namespace live_object_explorer::gui {
 
 namespace {
 
-bool showing = false;
+bool search_window_open = false;
 
-std::atomic<size_t> obj_counter = 0;
-class CachedObject {
-   public:
-    CachedObject(std::string_view name)
-        : name(name), id(std::format("{}##obj_{}", name, obj_counter++)) {}
+// NOLINTNEXTLINE(readability-magic-numbers)
+char search_query[4096] = "";
 
-    std::string name;
-    std::string id;
+std::vector<std::pair<std::string, WeakPointer>> search_results{};
+size_t selected_search_idx = 0;
+ImGuiTextFilter search_filter;
 
-    void draw(void) const { ImGui::Text("contents of %s", name.c_str()); }
-};
+void do_search(void) {
+    search_results.clear();
+    selected_search_idx = 0;
 
-std::vector<std::unique_ptr<CachedObject>> objects{};
+    auto first_non_space =
+        std::ranges::find_if_not(search_query, [](auto chr) { return std::isspace(chr); });
+    auto [last_non_space, _] =
+        std::ranges::find_last_if_not(first_non_space, std::ranges::end(search_query),
+                                      [](auto chr) { return std::isspace(chr); });
+    auto search = unrealsdk::utils::widen(std::string_view(first_non_space, last_non_space));
 
-}  // namespace
+    UClass* cls = nullptr;
+    if (search.find_first_of(L".:") == std::wstring::npos) {
+        cls = find_class(FName{search});
+    } else {
+        UObject* obj = unrealsdk::find_object(L"UObject"_fn, search);
+        if (obj == nullptr) {
+            return;
+        }
+        if (!obj->is_instance(find_class<UClass>())) {
+            LOG(DEV_WARNING, "TODO DUMP OBJECT {}", search);
+            return;
+        }
+        cls = reinterpret_cast<UClass*>(obj);
+    }
 
-void show(void) {
-    showing = true;
-}
-
-void render(void) {
-    if (!showing && objects.empty()) {
+    if (cls == nullptr) {
         return;
     }
 
-    ImGui::ShowDemoWindow();
+    std::ranges::copy(unrealsdk::gobjects() | std::views::filter([cls](auto obj) {
+                          return obj->is_instance(cls);
+                      }) | std::views::transform([](auto obj) {
+                          return std::make_pair<std::string, WeakPointer>(
+                              unrealsdk::utils::narrow(obj->get_path_name()), obj);
+                      }),
+                      std::back_inserter(search_results));
+}
 
-    if (ImGui::Begin("Live Object Explorer", &showing)) {
-        // NOLINTNEXTLINE(readability-magic-numbers)
-        static char search_query[4096] = "some.obj.path";
-        ImGui::InputText("##searchbar", &search_query[0], IM_ARRAYSIZE(search_query));
+/**
+ * @brief Draws the search window, if applicable.
+ */
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
+void draw_search_window(void) {
+    if (!search_window_open) {
+        return;
+    }
+
+    if (ImGui::Begin("Live Object Explorer", &search_window_open)) {
+        auto text_size = ImGui::CalcTextSize("Search");
+        auto rhs_width = text_size.x + (2 * ImGui::GetStyle().ItemSpacing.x);
+        // Assume the filter box heigh is the same as the general text height
+        auto filter_height = text_size.y + (3 * ImGui::GetStyle().FramePadding.y) + 1;
+
+        ImGui::SetNextItemWidth(-rhs_width);
+        if (ImGui::InputText(
+                "##search_bar", &search_query[0], IM_ARRAYSIZE(search_query),
+                ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
+            do_search();
+        }
         ImGui::SameLine();
-        ImGui::Button("Dump");
-        ImGui::SameLine();
-        ImGui::Button("Getall");
+        if (ImGui::Button("Search", ImVec2{-FLT_MIN, 0})) {
+            do_search();
+        }
 
-        static std::vector<std::string> results{{"obj1", "obj2", "obj3"}};
-        static size_t selected_result_idx = 0;
+        if (ImGui::BeginListBox("##search_results", ImVec2{-FLT_MIN, -filter_height})) {
+            for (size_t i = 0; i < search_results.size(); i++) {
+                auto& [name, ptr] = search_results[i];
+                if (!search_filter.PassFilter(name.c_str())) {
+                    continue;
+                }
 
-        if (ImGui::BeginListBox("##results listbox", ImVec2(-FLT_MIN, -FLT_MIN))) {
-            for (size_t i = 0; i < results.size(); i++) {
-                bool is_selected = selected_result_idx == i;
-                if (ImGui::Selectable(results[i].c_str(), is_selected)) {
-                    selected_result_idx = i;
+                bool is_selected = selected_search_idx == i;
+                bool still_loaded = (bool)ptr;
+
+                if (ImGui::Selectable(name.c_str(), is_selected,
+                                      still_loaded ? 0 : ImGuiSelectableFlags_Disabled)) {
+                    selected_search_idx = i;
                 }
 
                 if (is_selected) {
                     ImGui::SetItemDefaultFocus();
                 }
 
-                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-                    objects.emplace_back(std::make_unique<CachedObject>(results[i]));
-
-                    auto node_id = ImGui::GetID(objects[0]->id.c_str());
-                    if (ImGui::DockBuilderGetNode(node_id) == nullptr) {
-                        ImGui::DockBuilderAddNode(node_id, 0);
-                        ImGui::DockBuilderSetNodePos(node_id, ImVec2(100, 100));
-                        ImGui::DockBuilderSetNodeSize(node_id, ImVec2(100, 100));
-                    }
-                    ImGui::DockBuilderDockWindow(objects.back()->id.c_str(), node_id);
-                    ImGui::DockBuilderFinish(node_id);
+                if (still_loaded && ImGui::IsItemHovered()
+                    && (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)
+                        || ImGui::IsKeyPressed(ImGuiKey_Enter))) {
+                    LOG(DEV_WARNING, "TODO DUMP OBJECT {}", name);
                 }
             }
             ImGui::EndListBox();
         }
-    }
 
+        search_filter.Draw("Filter", -rhs_width);
+    }
     ImGui::End();
+}
 
-    auto it = objects.begin();
-    while (it != objects.end()) {
-        bool open = true;
-        if (ImGui::Begin((*it)->id.c_str(), &open, ImGuiWindowFlags_NoSavedSettings)) {
-            (*it)->draw();
-        }
-        ImGui::End();
+}  // namespace
 
-        if (it == objects.begin()) {
-            auto node_id = ImGui::GetID(objects[0]->id.c_str());
-            ImGui::DockSpace(node_id);
-        }
+void show(void) {
+    search_window_open = true;
+}
 
-        if (!open) {
-            it = objects.erase(it);
-        } else {
-            it++;
-        }
+void render(void) {
+    if (!search_window_open) {
+        return;
     }
+
+    ImGui::ShowDemoWindow();
+
+    draw_search_window();
 }
 
 }  // namespace live_object_explorer::gui

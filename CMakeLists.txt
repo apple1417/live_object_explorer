@@ -3,7 +3,7 @@ project(live_object_explorer VERSION 1)
 
 add_library(live_object_explorer SHARED)
 
-target_compile_features(live_object_explorer PUBLIC cxx_std_20)
+target_compile_features(live_object_explorer PUBLIC cxx_std_23)
 set_target_properties(live_object_explorer PROPERTIES
     COMPILE_WARNING_AS_ERROR True
     INTERPROCEDURAL_OPTIMIZATION True
