@@ -7,6 +7,10 @@ If:
 CompileFlags:
     # Treat the pch as c++
     Add: [-xc++]
+Diagnostics:
+    # Getting some spurious warnings about RGNDATA in d3d9.h
+    # Suspect it's due to the nested unrealsdk/pch.h defining NOGDI
+    Suppress: unknown_typename
 ---
 # Suppress errors from outside the project
 If:
@@ -19,3 +23,4 @@ If:
     PathMatch: src/.*\.in
 Diagnostics:
     Suppress: expected_expression
+

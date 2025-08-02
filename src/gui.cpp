@@ -1,11 +1,14 @@
 #include "pch.h"
 #include "gui.h"
+#include "object_window.h"
 
 using namespace unrealsdk::unreal;
 
 namespace live_object_explorer::gui {
 
 namespace {
+
+const constexpr auto DEFAULT_WINDOW_SIZE = ImVec2{400, 500};
 
 bool search_window_open = false;
 
@@ -36,7 +39,7 @@ void do_search(void) {
             return;
         }
         if (!obj->is_instance(find_class<UClass>())) {
-            LOG(DEV_WARNING, "TODO DUMP OBJECT {}", search);
+            open_object_window(obj);
             return;
         }
         cls = reinterpret_cast<UClass*>(obj);
@@ -64,6 +67,7 @@ void draw_search_window(void) {
         return;
     }
 
+    ImGui::SetNextWindowSize(DEFAULT_WINDOW_SIZE, ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Live Object Explorer", &search_window_open)) {
         auto text_size = ImGui::CalcTextSize("Search");
         auto rhs_width = text_size.x + (2 * ImGui::GetStyle().ItemSpacing.x);
@@ -103,7 +107,7 @@ void draw_search_window(void) {
                 if (still_loaded && ImGui::IsItemHovered()
                     && (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)
                         || ImGui::IsKeyPressed(ImGuiKey_Enter))) {
-                    LOG(DEV_WARNING, "TODO DUMP OBJECT {}", name);
+                    open_object_window(*ptr);
                 }
             }
             ImGui::EndListBox();
@@ -116,18 +120,73 @@ void draw_search_window(void) {
 
 }  // namespace
 
+namespace {
+
+// Use a list since we mostly care about deleting items in the middle without invalidating iterators
+std::list<ObjectWindow> object_windows{};
+
+/**
+ * @brief Docks the latest opened object window to the given window.
+ *
+ * @param parent_window_id The id of the window to dock to.
+ */
+void dock_latest_obj_window(const std::string& /* parent_window_id */) {
+    // TODO
+#if 0
+    auto node_id = ImGui::GetID((parent_window_id + "_dock").c_str());
+
+    if (ImGui::DockBuilderGetNode(node_id) == nullptr) {
+        ImGui::DockBuilderAddNode(node_id);
+        ImGui::DockBuilderSetNodePos(node_id, ImVec2(100, 100));
+        ImGui::DockBuilderSetNodeSize(node_id, ImVec2(100, 100));
+    }
+    ImGui::DockBuilderDockWindow(object_windows.back().get_id().c_str(), node_id);
+    ImGui::DockBuilderFinish(node_id);
+#endif
+}
+}  // namespace
+
+void open_object_window(UObject* obj) {
+    object_windows.emplace_back(obj);
+    // Intentionally may dock to itself - seem to be required?
+    dock_latest_obj_window(object_windows.front().get_id());
+}
+
+void open_object_window(UObject* obj, const std::string& parent_window_id) {
+    object_windows.emplace_back(obj);
+    dock_latest_obj_window(parent_window_id);
+}
+
 void show(void) {
     search_window_open = true;
 }
 
 void render(void) {
-    if (!search_window_open) {
+    if (!search_window_open && object_windows.empty()) {
         return;
     }
 
     ImGui::ShowDemoWindow();
 
     draw_search_window();
+
+    auto iter = object_windows.begin();
+    while (iter != object_windows.end()) {
+        bool open = true;
+
+        ImGui::SetNextWindowSize(DEFAULT_WINDOW_SIZE, ImGuiCond_FirstUseEver);
+        if (ImGui::Begin(iter->get_id().c_str(), &open, ImGuiWindowFlags_NoSavedSettings)) {
+            iter->draw();
+        }
+        ImGui::End();
+
+        if (!open) {
+            ImGui::ClearWindowSettings(iter->get_id().c_str());
+            iter = object_windows.erase(iter);
+        } else {
+            iter++;
+        }
+    }
 }
 
 }  // namespace live_object_explorer::gui
