@@ -5,13 +5,14 @@
 
 namespace live_object_explorer {
 
+class AbstractComponent;
+
+struct ObjectWindowSettings {
+    bool editable = false;
+    bool hex = false;
+};
+
 class ObjectWindow {
-   private:
-    unrealsdk::unreal::WeakPointer ptr;
-
-    std::string id;
-    std::string name;
-
    public:
     /**
      * @brief Parses the given object into a format ready to be drawn to screen.
@@ -37,6 +38,28 @@ class ObjectWindow {
      * @note Does not call begin/end.
      */
     void draw(void);
+
+   private:
+    unrealsdk::unreal::WeakPointer ptr;
+
+    std::string id;
+    std::string name;
+
+    struct ClassSection {
+        std::string header;
+        std::vector<std::unique_ptr<AbstractComponent>> components;
+    };
+
+    std::vector<ClassSection> sections;
+
+    ObjectWindowSettings settings = {};
+
+    /**
+     * @brief Adds the section for native properties to the end of the list.
+     *
+     * @param obj The object being initalized.
+     */
+    void append_native_section(unrealsdk::unreal::UObject* obj);
 };
 
 }  // namespace live_object_explorer

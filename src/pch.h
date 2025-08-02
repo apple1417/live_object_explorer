@@ -35,7 +35,11 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND h_wnd,
 #include <unrealsdk/config.h>
 #include <unrealsdk/memory.h>
 #include <unrealsdk/unreal/classes/uclass.h>
+#include <unrealsdk/unreal/classes/uenum.h>
+#include <unrealsdk/unreal/classes/ufield.h>
 #include <unrealsdk/unreal/classes/uobject.h>
+#include <unrealsdk/unreal/classes/uproperty.h>
+#include <unrealsdk/unreal/classes/ustruct.h>
 #include <unrealsdk/unreal/find_class.h>
 #include <unrealsdk/unreal/structs/fname.h>
 #include <unrealsdk/unreal/wrappers/gobjects.h>

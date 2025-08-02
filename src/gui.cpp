@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "gui.h"
+#include "components/abstract.h"
 #include "object_window.h"
 
 using namespace unrealsdk::unreal;
@@ -175,7 +176,8 @@ void render(void) {
         bool open = true;
 
         ImGui::SetNextWindowSize(DEFAULT_WINDOW_SIZE, ImGuiCond_FirstUseEver);
-        if (ImGui::Begin(iter->get_id().c_str(), &open, ImGuiWindowFlags_NoSavedSettings)) {
+        if (ImGui::Begin(iter->get_id().c_str(), &open,
+                         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar)) {
             iter->draw();
         }
         ImGui::End();
