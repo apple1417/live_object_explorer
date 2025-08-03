@@ -1,8 +1,15 @@
 #include "pch.h"
 #include "component_picker.h"
+#include "components/bool_component.h"
 #include "components/object_component.h"
+#include "components/object_field_component.h"
 #include "components/scalar_component.h"
+#include "components/str_component.h"
 #include "components/unknown_component.h"
+#include "unrealsdk/unreal/classes/properties/attribute_property.h"
+#include "unrealsdk/unreal/classes/properties/uboolproperty.h"
+#include "unrealsdk/unreal/classes/ublueprintgeneratedclass.h"
+#include "unrealsdk/unreal/classes/uscriptstruct.h"
 
 using namespace unrealsdk::unreal;
 
@@ -19,6 +26,7 @@ namespace {
  * @param name The name to use for this component.
  */
 template <typename T>
+    requires std::negation_v<std::is_base_of<UProperty, T>>
 void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
                             T* field,
                             std::string&& name) {
@@ -52,13 +60,53 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 #endif
 
 // UArrayProperty
-// UBlueprintGeneratedClass
-// UBoolProperty
+
+template <>
+void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                            UBlueprintGeneratedClass* field,
+                            std::string&& name) {
+    components.emplace_back(std::make_unique<ObjectFieldComponent>(std::move(name), field));
+}
+
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               UBoolProperty* prop,
+                               std::string&& name,
+                               uintptr_t addr) {
+    components.emplace_back(std::make_unique<BoolComponent>(
+        std::move(name), reinterpret_cast<BoolComponent::field_mask_type*>(addr),
+        prop->FieldMask()));
+}
+
 // UByteAttributeProperty
 // UByteProperty
-// UClass
-// UClassProperty
-// UComponentProperty
+
+template <>
+void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                            UClass* field,
+                            std::string&& name) {
+    components.emplace_back(std::make_unique<ObjectFieldComponent>(std::move(name), field));
+}
+
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               UClassProperty* prop,
+                               std::string&& name,
+                               uintptr_t addr) {
+    components.emplace_back(
+        std::make_unique<ClassComponent>(std::move(name), reinterpret_cast<UObject**>(addr),
+                                         prop->PropertyClass(), prop->MetaClass()));
+}
+
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               UComponentProperty* prop,
+                               std::string&& name,
+                               uintptr_t addr) {
+    components.emplace_back(std::make_unique<ObjectComponent>(
+        std::move(name), reinterpret_cast<UObject**>(addr), prop->PropertyClass()));
+}
+
 // UConst
 // UDelegateProperty
 
@@ -71,10 +119,30 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
         std::make_unique<DoubleComponent>(std::move(name), reinterpret_cast<float64_t*>(addr)));
 }
 
-// UEnum
+template <>
+void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                            UEnum* field,
+                            std::string&& name) {
+    components.emplace_back(std::make_unique<ObjectFieldComponent>(std::move(name), field));
+}
+
 // UEnumProperty
-// UField
-// UFloatAttributeProperty
+
+template <>
+void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                            UField* field,
+                            std::string&& name) {
+    components.emplace_back(std::make_unique<ObjectFieldComponent>(std::move(name), field));
+}
+
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               UFloatAttributeProperty* /*prop*/,
+                               std::string&& name,
+                               uintptr_t addr) {
+    components.emplace_back(
+        std::make_unique<FloatComponent>(std::move(name), reinterpret_cast<float32_t*>(addr)));
+}
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
@@ -114,7 +182,15 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
         std::make_unique<Int8Component>(std::move(name), reinterpret_cast<int8_t*>(addr)));
 }
 
-// UIntAttributeProperty
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               UIntAttributeProperty* /*prop*/,
+                               std::string&& name,
+                               uintptr_t addr) {
+    components.emplace_back(
+        std::make_unique<IntComponent>(std::move(name), reinterpret_cast<int32_t*>(addr)));
+}
+
 // UInterfaceProperty
 
 template <>
@@ -126,6 +202,17 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
         std::make_unique<IntComponent>(std::move(name), reinterpret_cast<int32_t*>(addr)));
 }
 
+// ULazyObjectProperty
+// UMulticastDelegateProperty
+// UNameProperty
+
+template <>
+void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                            UObject* field,
+                            std::string&& name) {
+    components.emplace_back(std::make_unique<ObjectFieldComponent>(std::move(name), field));
+}
+
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
                                UObjectProperty* prop,
@@ -135,17 +222,34 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
         std::move(name), reinterpret_cast<UObject**>(addr), prop->PropertyClass()));
 }
 
-// ULazyObjectProperty
-// UMulticastDelegateProperty
-// UNameProperty
-// UObject
-// UObjectProperty
 // UProperty
-// UScriptStruct
+
+template <>
+void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                            UScriptStruct* field,
+                            std::string&& name) {
+    components.emplace_back(std::make_unique<ObjectFieldComponent>(std::move(name), field));
+}
+
 // USoftClassProperty
 // USoftObjectProperty
-// UStrProperty
-// UStruct
+
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               UStrProperty* /*prop*/,
+                               std::string&& name,
+                               uintptr_t addr) {
+    components.emplace_back(
+        std::make_unique<StrComponent>(std::move(name), reinterpret_cast<UnmanagedFString*>(addr)));
+}
+
+template <>
+void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                            UStruct* field,
+                            std::string&& name) {
+    components.emplace_back(std::make_unique<ObjectFieldComponent>(std::move(name), field));
+}
+
 // UStructProperty
 // UTextProperty
 

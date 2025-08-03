@@ -1,0 +1,34 @@
+#include "pch.h"
+#include "components/object_field_component.h"
+#include "gui.h"
+#include "object_window.h"
+
+using namespace unrealsdk::unreal;
+
+namespace live_object_explorer {
+
+ObjectFieldComponent::ObjectFieldComponent(std::string&& name, UObject* obj)
+    : AbstractComponent(std::move(name)),
+      ptr(obj),
+      hashless_name(this->name.substr(0, this->length_before_hash)),
+      cached_obj_name(std::format("{}'{}'",
+                                  obj->Class()->Name(),
+                                  unrealsdk::utils::narrow(obj->get_path_name()))) {}
+
+void ObjectFieldComponent::draw(const ObjectWindowSettings& settings) {
+    if (!settings.include_fields) {
+        return;
+    }
+
+    ImGui::Text("%s:", this->hashless_name.c_str());
+    ImGui::SameLine();
+    if (!this->ptr) {
+        ImGui::TextDisabled("%s", this->cached_obj_name.c_str());
+    } else {
+        if (ImGui::TextLink(this->cached_obj_name.c_str())) {
+            gui::open_object_window(*this->ptr, this->name);
+        }
+    }
+}
+
+}  // namespace live_object_explorer
