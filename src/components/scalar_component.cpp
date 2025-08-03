@@ -1,18 +1,19 @@
 #include "pch.h"
-#include "components/integral_component.h"
+#include "components/scalar_component.h"
 #include "object_window.h"
 
 namespace live_object_explorer {
 
 namespace {
 
-template <std::integral T>
+template <typename T>
 void draw_scalar(const std::string& name,
                  T* addr,
                  T* step,
                  const ObjectWindowSettings& settings,
                  ImGuiDataType data_type) {
-    ImGui::InputScalar(name.c_str(), data_type, addr, step, nullptr, settings.hex ? "%X" : nullptr,
+    ImGui::InputScalar(name.c_str(), data_type, addr, step, nullptr,
+                       (std::is_integral_v<T> && settings.hex) ? "%X" : nullptr,
                        settings.editable ? 0 : ImGuiInputTextFlags_ReadOnly);
 }
 
@@ -52,6 +53,16 @@ template <>
 void UInt64Component::draw(const ObjectWindowSettings& settings) {
     uint64_t step = 1;
     draw_scalar(this->name, this->addr, &step, settings, ImGuiDataType_U64);
+}
+template <>
+void FloatComponent::draw(const ObjectWindowSettings& settings) {
+    float32_t step = 1;
+    draw_scalar(this->name, this->addr, &step, settings, ImGuiDataType_Float);
+}
+template <>
+void DoubleComponent::draw(const ObjectWindowSettings& settings) {
+    float64_t step = 1;
+    draw_scalar(this->name, this->addr, &step, settings, ImGuiDataType_Double);
 }
 
 }  // namespace live_object_explorer

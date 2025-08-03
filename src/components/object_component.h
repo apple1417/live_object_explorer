@@ -7,20 +7,27 @@
 namespace live_object_explorer {
 
 class ObjectComponent : public AbstractComponent {
-   private:
-    std::string name;
-    std::string cached_obj_name = "null";
+   protected:
+    // NOLINTNEXTLINE(readability-redundant-string-init)
+    static const constexpr std::string_view NULL_OBJECT_NAME = "";
+
+    std::string cached_obj_name;
     uintptr_t* addr;
-    uintptr_t cached_obj = 0;
+    uintptr_t cached_obj;
+
+    unrealsdk::unreal::UClass* property_class;
 
    public:
     /**
      * @brief Creates a new component pointing at an object.
      *
-     * @param name The name of the property this is wrapping.
+     * @param name The component's name. May include hashes.
      * @param addr Pointer to the object pointer being displayed.
+     * @param property_class The class this property must be set to.
      */
-    ObjectComponent(std::string_view name, unrealsdk::unreal::UObject** addr);
+    ObjectComponent(std::string&& name,
+                    unrealsdk::unreal::UObject** addr,
+                    unrealsdk::unreal::UClass* property_class);
 
     ~ObjectComponent() override = default;
     void draw(const ObjectWindowSettings& settings) override;

@@ -7,20 +7,36 @@
 namespace live_object_explorer {
 
 class UnknownComponent : public AbstractComponent {
-   private:
-    std::string name;
-    std::string cls_name;
+   protected:
+    std::string msg;
 
    public:
     /**
-     * @brief Creates a new component pointing at an unknown value.
+     * @brief Creates a new component pointing at an unknown field value.
      *
-     * @param name The name of the property this is wrapping.
-     * @param cls_name The class name of the property this is wrapping.
+     * @param name The component's name. May include hashes.
+     * @param cls_name The unknown class's name.
      */
-    UnknownComponent(std::string_view name, std::string_view cls_name);
+    UnknownComponent(std::string&& name, std::string_view cls_name);
 
     ~UnknownComponent() override = default;
+    void draw(const ObjectWindowSettings& settings) override;
+};
+
+class UnknownPropertyComponent : public AbstractComponent {
+   protected:
+    std::string msg;
+
+   public:
+    /**
+     * @brief Creates a new component pointing at an unknown property value.
+     *
+     * @param name The component's name. May include hashes.
+     * @param cls_name The unknown class's name.
+     */
+    UnknownPropertyComponent(std::string&& name, std::string_view cls_name);
+
+    ~UnknownPropertyComponent() override = default;
     void draw(const ObjectWindowSettings& settings) override;
 };
 

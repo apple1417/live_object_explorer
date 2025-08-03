@@ -1,15 +1,14 @@
-#ifndef COMPONENTS_INTEGRAL_COMPONENT_H
-#define COMPONENTS_INTEGRAL_COMPONENT_H
+#ifndef COMPONENTS_SCALAR_COMPONENT_H
+#define COMPONENTS_SCALAR_COMPONENT_H
 
 #include "pch.h"
 #include "components/abstract.h"
 
 namespace live_object_explorer {
 
-template <std::integral T>
-class IntegralComponent : public AbstractComponent {
-   private:
-    std::string name;
+template <typename T>
+class ScalarComponent : public AbstractComponent {
+   protected:
     T* addr;
 
    public:
@@ -17,22 +16,24 @@ class IntegralComponent : public AbstractComponent {
      * @brief Creates a new component pointing at an integral.
      *
      * @tparam T the integral type this is wrapping.
-     * @param name The name of the property this is wrapping.
+     * @param name The component's name. May include hashes.
      * @param addr Pointer to the value being displayed.
      */
-    IntegralComponent(std::string_view name, T* addr) : name(name), addr(addr) {}
+    ScalarComponent(std::string&& name, T* addr) : AbstractComponent(std::move(name)), addr(addr) {}
 
-    ~IntegralComponent() override = default;
+    ~ScalarComponent() override = default;
     void draw(const ObjectWindowSettings& settings) override;
 };
 
-using Int8Component = IntegralComponent<int8_t>;
-using Int16Component = IntegralComponent<int16_t>;
-using IntComponent = IntegralComponent<int32_t>;
-using Int64Component = IntegralComponent<int64_t>;
-using UInt16Component = IntegralComponent<uint16_t>;
-using UInt32Component = IntegralComponent<uint32_t>;
-using UInt64Component = IntegralComponent<uint64_t>;
+using Int8Component = ScalarComponent<int8_t>;
+using Int16Component = ScalarComponent<int16_t>;
+using IntComponent = ScalarComponent<int32_t>;
+using Int64Component = ScalarComponent<int64_t>;
+using UInt16Component = ScalarComponent<uint16_t>;
+using UInt32Component = ScalarComponent<uint32_t>;
+using UInt64Component = ScalarComponent<uint64_t>;
+using FloatComponent = ScalarComponent<float32_t>;
+using DoubleComponent = ScalarComponent<float64_t>;
 
 // TODO: byte component is different because it includes an enum
 
@@ -50,7 +51,11 @@ template <>
 void UInt32Component::draw(const ObjectWindowSettings& settings);
 template <>
 void UInt64Component::draw(const ObjectWindowSettings& settings);
+template <>
+void FloatComponent::draw(const ObjectWindowSettings& settings);
+template <>
+void DoubleComponent::draw(const ObjectWindowSettings& settings);
 
 }  // namespace live_object_explorer
 
-#endif /* COMPONENTS_INTEGRAL_COMPONENT_H */
+#endif /* COMPONENTS_SCALAR_COMPONENT_H */

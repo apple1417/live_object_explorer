@@ -1,8 +1,9 @@
 #include "pch.h"
 #include "object_window.h"
+#include "component_picker.h"
 #include "components/abstract.h"
-#include "components/integral_component.h"
 #include "components/object_component.h"
+#include "components/scalar_component.h"
 #include "components/unknown_component.h"
 
 using namespace unrealsdk::unreal;
@@ -26,22 +27,14 @@ ObjectWindow::ObjectWindow(UObject* obj)
                                         obj->Class()->Name(),
                                         unrealsdk::utils::narrow(obj->get_path_name()))) {
     for (UStruct* cls = obj->Class(); cls != nullptr; cls = cls->SuperField()) {
-        decltype(ClassSection::components) components{};
-        for (auto field = cls->Children(); field != nullptr; field = field->Next()) {
-            if (!field->Class()->inherits(find_class<UProperty>())) {
-                // TODO own list?
-                continue;
-            }
-
-            // TODO: cast, component per type
-            components.emplace_back(std::make_unique<UnknownComponent>(
-                (std::string)field->Name(), (std::string)field->Class()->Name()));
-        }
-
         this->sections.emplace_back(
-            std::format("{}{}##section_{}", cls->Name(), components.empty() ? " (empty)" : "",
-                        this->sections.size()),
-            std::move(components));
+            std::format("{}##section_{}", cls->Name(), this->sections.size()),
+            decltype(ClassSection::components){});
+
+        auto& components = this->sections.back().components;
+        for (auto field = cls->Children(); field != nullptr; field = field->Next()) {
+            insert_component(components, field, reinterpret_cast<uintptr_t>(obj));
+        }
     }
     this->append_native_section(obj);
 }
@@ -53,8 +46,10 @@ const std::string& ObjectWindow::get_id() const {
 void ObjectWindow::draw() {
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("Settings")) {
-            ImGui::MenuItem("Enable Editing", nullptr, &this->settings.editable);
-            ImGui::MenuItem("Hex Numbers", nullptr, &this->settings.hex);
+            // TODO
+            // ImGui::MenuItem("Enable Editing", nullptr, &this->settings.editable);
+            ImGui::MenuItem("Hex Integers", nullptr, &this->settings.hex);
+            ImGui::MenuItem("Show UFields", nullptr, &this->settings.include_fields);
             ImGui::EndMenu();
         }
 
@@ -70,15 +65,39 @@ void ObjectWindow::draw() {
         return;
     }
 
+    auto content_region = ImGui::GetContentRegionAvail();
+    // NOLINTBEGIN(readability-magic-numbers)
+    float width =
+        -(content_region.x - std::min(ImGui::GetFontSize() * 20.0F, content_region.x * 0.5F));
+    // NOLINTEND(readability-magic-numbers)
+
+    this->filter.Draw("Filter", width);
+    auto filter_active = this->filter.IsActive();
+
     for (auto& section : this->sections) {
-        if (ImGui::TreeNodeEx(section.header.c_str(),
-                              section.components.empty() ? ImGuiTreeNodeFlags_Leaf : 0)) {
+        // If a filter is active, force open all nodes
+        // When you clear the filter, force close them all
+        if (filter_active) {
+            ImGui::SetNextItemOpen(true);
+        } else if (this->filter_active_last_time) {
+            ImGui::SetNextItemOpen(false);
+        }
+
+        if (ImGui::TreeNode(section.header.c_str())) {
+            ImGui::PushItemWidth(width);
+
             for (auto& component : section.components) {
-                component->draw(this->settings);
+                if (component->passes_filter(this->filter)) {
+                    component->draw(this->settings);
+                }
             }
+
+            ImGui::PopItemWidth();
             ImGui::TreePop();
         }
     }
+
+    this->filter_active_last_time = filter_active;
 }
 
 void ObjectWindow::append_native_section(UObject* obj) {
@@ -87,19 +106,18 @@ void ObjectWindow::append_native_section(UObject* obj) {
     auto& components = this->sections.back().components;
 
     components.emplace_back(
-        std::make_unique<IntegralComponent<std::remove_reference_t<decltype(obj->ObjectFlags())>>>(
+        // Read off the real type of object flags, since it changes
+        std::make_unique<ScalarComponent<std::remove_reference_t<decltype(obj->ObjectFlags())>>>(
             "ObjectFlags", &obj->ObjectFlags()));
-    components.emplace_back(
-        std::make_unique<
-            IntegralComponent<std::remove_reference_t<decltype(obj->InternalIndex())>>>(
-            "InternalIndex", &obj->InternalIndex()));
+    components.emplace_back(std::make_unique<IntComponent>("InternalIndex", &obj->InternalIndex()));
 
     // TODO: proper class component
-    components.emplace_back(
-        std::make_unique<ObjectComponent>("Class", reinterpret_cast<UObject**>(&obj->Class())));
+    components.emplace_back(std::make_unique<ObjectComponent>(
+        "Class", reinterpret_cast<UObject**>(&obj->Class()), find_class<UClass>()));
 
     // TODO: Name
-    components.emplace_back(std::make_unique<ObjectComponent>("Outer", &obj->Outer()));
+    components.emplace_back(
+        std::make_unique<ObjectComponent>("Outer", &obj->Outer(), find_class<UObject>()));
 
     // TODO: other classes
     // TODO: gaps?
