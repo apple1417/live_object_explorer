@@ -75,12 +75,10 @@ void ObjectWindow::draw() {
     auto filter_active = this->filter.IsActive();
 
     for (auto& section : this->sections) {
-        // If a filter is active, force open all nodes
-        // When you clear the filter, force close them all
-        if (filter_active) {
-            ImGui::SetNextItemOpen(true);
-        } else if (this->filter_active_last_time) {
-            ImGui::SetNextItemOpen(false);
+        // When you start using the filter, force all nodes open
+        // When you stop, force all nodes closed
+        if (filter_active != this->filter_active_last_time) {
+            ImGui::SetNextItemOpen(filter_active);
         }
 
         if (ImGui::TreeNode(section.header.c_str())) {

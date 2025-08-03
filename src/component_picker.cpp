@@ -10,29 +10,46 @@ namespace live_object_explorer {
 
 namespace {
 
-#ifdef __clang__  // for clangd more than anyhting
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-function"
-#endif
-
 /**
- * @fn insert_property_component
- * @brief Adds a new component for a UProperty.
+ * @brief Adds a new component for any non-UProperty- generally fields, hence the name.
  *
- * @param components The list of components to add to.
- * @param field The property to add.
- * @param name The name to use for this component.
- * @param addr The address of the value behind this component.
- */
-
-/**
- * @fn insert_field_component
- * @brief Adds a new component for any non-UProperty field.
- *
+ * @tparam T The type of the field. May be void to deliberately call the fallback.
  * @param components The list of components to add to.
  * @param field The field to add.
  * @param name The name to use for this component.
  */
+template <typename T>
+void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                            T* field,
+                            std::string&& name) {
+    components.emplace_back(std::make_unique<UnknownComponent>(
+        std::move(name), (std::string)((UObject*)field)->Class()->Name()));
+}
+
+/**
+ * @brief Adds a new component for a UProperty.
+ *
+ * @tparam T The type of the property. May be void to deliberately call the fallback.
+ * @param components The list of components to add to.
+ * @param prop The property to add.
+ * @param name The name to use for this component.
+ * @param addr The address of the value behind this component.
+ */
+template <typename T>
+    requires std::is_base_of_v<UProperty, T>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               T* prop,
+                               std::string&& name,
+                               uintptr_t /*addr*/) {
+    // Fallback to unknown
+    components.emplace_back(std::make_unique<UnknownPropertyComponent>(
+        std::move(name), (std::string)((UObject*)prop)->Class()->Name()));
+}
+
+#ifdef __clang__  // for clangd more than anything
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#endif
 
 // UArrayProperty
 // UBlueprintGeneratedClass
@@ -45,8 +62,9 @@ namespace {
 // UConst
 // UDelegateProperty
 
+template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UDoubleProperty* /*field*/,
+                               UDoubleProperty* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -58,8 +76,9 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 // UField
 // UFloatAttributeProperty
 
+template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UFloatProperty* /*field*/,
+                               UFloatProperty* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -68,24 +87,27 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 // UFunction
 
+template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UInt16Property* /*field*/,
+                               UInt16Property* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
         std::make_unique<Int16Component>(std::move(name), reinterpret_cast<int16_t*>(addr)));
 }
 
+template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UInt64Property* /*field*/,
+                               UInt64Property* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
         std::make_unique<Int64Component>(std::move(name), reinterpret_cast<int64_t*>(addr)));
 }
 
+template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UInt8Property* /*field*/,
+                               UInt8Property* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -95,45 +117,30 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 // UIntAttributeProperty
 // UInterfaceProperty
 
+template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UIntProperty* /*field*/,
+                               UIntProperty* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
         std::make_unique<IntComponent>(std::move(name), reinterpret_cast<int32_t*>(addr)));
 }
 
+template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UObjectProperty* field,
+                               UObjectProperty* prop,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(std::make_unique<ObjectComponent>(
-        std::move(name), reinterpret_cast<UObject**>(addr), field->PropertyClass()));
+        std::move(name), reinterpret_cast<UObject**>(addr), prop->PropertyClass()));
 }
 
 // ULazyObjectProperty
 // UMulticastDelegateProperty
 // UNameProperty
-
-void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                            UObject* field,
-                            std::string&& name) {
-    // Fallback to unknown
-    components.emplace_back(
-        std::make_unique<UnknownComponent>(std::move(name), (std::string)field->Class()->Name()));
-}
-
+// UObject
 // UObjectProperty
-
-void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UProperty* field,
-                               std::string&& name,
-                               uintptr_t /*addr*/) {
-    // Fallback to unknown
-    components.emplace_back(std::make_unique<UnknownPropertyComponent>(
-        std::move(name), (std::string)field->Class()->Name()));
-}
-
+// UProperty
 // UScriptStruct
 // USoftClassProperty
 // USoftObjectProperty
@@ -142,22 +149,27 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 // UStructProperty
 // UTextProperty
 
+template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UUInt16Property* /*field*/,
+                               UUInt16Property* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
         std::make_unique<UInt16Component>(std::move(name), reinterpret_cast<uint16_t*>(addr)));
 }
+
+template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UUInt32Property* /*field*/,
+                               UUInt32Property* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
         std::make_unique<UInt32Component>(std::move(name), reinterpret_cast<uint32_t*>(addr)));
 }
+
+template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UUInt64Property* /*field*/,
+                               UUInt64Property* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -173,31 +185,39 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 }  // namespace
 
 void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                      unrealsdk::unreal::UField* field,
+                      UObject* obj,
                       uintptr_t base_addr) {
-    cast(field, [&components, base_addr]<typename T>(T* field) {
-        if constexpr (std::is_base_of_v<UProperty, T>) {
-            auto offset_internal = field->Offset_Internal();
-            auto array_dim = field->ArrayDim();
-            if (array_dim > 1) {
-                auto element_size = field->ElementSize();
-                for (decltype(array_dim) i = 0; i < array_dim; i++) {
-                    auto name = std::format("{}[{}]##comp_{}", field->Name(), i, components.size());
-                    auto addr = base_addr + offset_internal + (i * element_size);
+    cast(
+        obj,
+        [&components, base_addr]<typename T>(T* obj) {
+            if constexpr (std::is_base_of_v<UProperty, T>) {
+                auto offset_internal = obj->Offset_Internal();
+                auto array_dim = obj->ArrayDim();
+                if (array_dim > 1) {
+                    auto element_size = obj->ElementSize();
+                    for (decltype(array_dim) i = 0; i < array_dim; i++) {
+                        auto name =
+                            std::format("{}[{}]##comp_{}", obj->Name(), i, components.size());
+                        auto addr = base_addr + offset_internal + (i * element_size);
 
-                    insert_property_component(components, field, std::move(name), addr);
+                        insert_property_component<T>(components, obj, std::move(name), addr);
+                    }
+                } else {
+                    auto name = std::format("{}##comp_{}", obj->Name(), components.size());
+                    auto addr = base_addr + offset_internal;
+
+                    insert_property_component<T>(components, obj, std::move(name), addr);
                 }
             } else {
-                auto name = std::format("{}##comp_{}", field->Name(), components.size());
-                auto addr = base_addr + offset_internal;
-
-                insert_property_component(components, field, std::move(name), addr);
+                auto name = std::format("{}##comp_{}", obj->Name(), components.size());
+                insert_field_component(components, obj, std::move(name));
             }
-        } else {
-            auto name = std::format("{}##comp_{}", field->Name(), components.size());
-            insert_field_component(components, field, std::move(name));
-        }
-    });
+        },
+        [&components](UObject* obj) {
+            // If the cast fails, use void to explictly get the fallback
+            auto name = std::format("{}##comp_{}", obj->Name(), components.size());
+            insert_field_component<void>(components, obj, std::move(name));
+        });
 }
 
 }  // namespace live_object_explorer
