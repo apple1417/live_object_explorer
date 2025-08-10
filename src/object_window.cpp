@@ -107,7 +107,7 @@ void ObjectWindow::append_native_section(UObject* obj) {
         // Read off the real type of object flags, since it changes
         std::make_unique<ScalarComponent<std::remove_reference_t<decltype(obj->ObjectFlags())>>>(
             "ObjectFlags", &obj->ObjectFlags()));
-    components.emplace_back(std::make_unique<IntComponent>("InternalIndex", &obj->InternalIndex()));
+    components.emplace_back(std::make_unique<Int32Component>("InternalIndex", &obj->InternalIndex()));
 
     // TODO: proper class component
     components.emplace_back(std::make_unique<ObjectComponent>(

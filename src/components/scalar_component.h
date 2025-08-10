@@ -27,24 +27,25 @@ class ScalarComponent : public AbstractComponent {
 
 using Int8Component = ScalarComponent<int8_t>;
 using Int16Component = ScalarComponent<int16_t>;
-using IntComponent = ScalarComponent<int32_t>;
+using Int32Component = ScalarComponent<int32_t>;
 using Int64Component = ScalarComponent<int64_t>;
+using UInt8Component = ScalarComponent<uint8_t>;
 using UInt16Component = ScalarComponent<uint16_t>;
 using UInt32Component = ScalarComponent<uint32_t>;
 using UInt64Component = ScalarComponent<uint64_t>;
 using FloatComponent = ScalarComponent<float32_t>;
 using DoubleComponent = ScalarComponent<float64_t>;
 
-// TODO: byte component is different because it includes an enum
-
 template <>
 void Int8Component::draw(const ObjectWindowSettings& settings);
 template <>
 void Int16Component::draw(const ObjectWindowSettings& settings);
 template <>
-void IntComponent::draw(const ObjectWindowSettings& settings);
+void Int32Component::draw(const ObjectWindowSettings& settings);
 template <>
 void Int64Component::draw(const ObjectWindowSettings& settings);
+template <>
+void UInt8Component::draw(const ObjectWindowSettings& settings);
 template <>
 void UInt16Component::draw(const ObjectWindowSettings& settings);
 template <>

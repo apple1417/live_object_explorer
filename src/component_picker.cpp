@@ -1,15 +1,12 @@
 #include "pch.h"
 #include "component_picker.h"
 #include "components/bool_component.h"
+#include "components/enum_component.h"
 #include "components/object_component.h"
 #include "components/object_field_component.h"
 #include "components/scalar_component.h"
 #include "components/str_component.h"
 #include "components/unknown_component.h"
-#include "unrealsdk/unreal/classes/properties/attribute_property.h"
-#include "unrealsdk/unreal/classes/properties/uboolproperty.h"
-#include "unrealsdk/unreal/classes/ublueprintgeneratedclass.h"
-#include "unrealsdk/unreal/classes/uscriptstruct.h"
 
 using namespace unrealsdk::unreal;
 
@@ -78,8 +75,35 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
         prop->FieldMask()));
 }
 
-// UByteAttributeProperty
-// UByteProperty
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               UByteAttributeProperty* prop,
+                               std::string&& name,
+                               uintptr_t addr) {
+    auto uenum = prop->Enum();
+    if (uenum != nullptr) {
+        components.emplace_back(std::make_unique<UInt8EnumComponent>(
+            std::move(name), reinterpret_cast<uint8_t*>(addr), uenum));
+    } else {
+        components.emplace_back(
+            std::make_unique<UInt8Component>(std::move(name), reinterpret_cast<uint8_t*>(addr)));
+    }
+}
+
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               UByteProperty* prop,
+                               std::string&& name,
+                               uintptr_t addr) {
+    auto uenum = prop->Enum();
+    if (uenum != nullptr) {
+        components.emplace_back(std::make_unique<UInt8EnumComponent>(
+            std::move(name), reinterpret_cast<uint8_t*>(addr), uenum));
+    } else {
+        components.emplace_back(
+            std::make_unique<UInt8Component>(std::move(name), reinterpret_cast<uint8_t*>(addr)));
+    }
+}
 
 template <>
 void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
@@ -126,7 +150,25 @@ void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& com
     components.emplace_back(std::make_unique<ObjectFieldComponent>(std::move(name), field));
 }
 
-// UEnumProperty
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               UEnumProperty* prop,
+                               std::string&& name,
+                               uintptr_t addr) {
+    using valid_underlying_types =
+        std::tuple<UInt8Property, UInt16Property, UIntProperty, UInt64Property, UByteProperty,
+                   UUInt16Property, UUInt32Property, UUInt64Property>;
+
+    auto uenum = prop->Enum();
+    cast<cast_options<>::with_classes<valid_underlying_types>>(
+        prop->UnderlyingProp(), [&]<typename T>(const T* /*underlying*/) {
+            using data_type = PropTraits<T>::Value;
+            static_assert(std::is_integral_v<data_type>);
+
+            components.emplace_back(std::make_unique<EnumComponent<data_type>>(
+                std::move(name), reinterpret_cast<data_type*>(addr), uenum));
+        });
+}
 
 template <>
 void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
@@ -188,7 +230,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
-        std::make_unique<IntComponent>(std::move(name), reinterpret_cast<int32_t*>(addr)));
+        std::make_unique<Int32Component>(std::move(name), reinterpret_cast<int32_t*>(addr)));
 }
 
 // UInterfaceProperty
@@ -199,7 +241,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
-        std::make_unique<IntComponent>(std::move(name), reinterpret_cast<int32_t*>(addr)));
+        std::make_unique<Int32Component>(std::move(name), reinterpret_cast<int32_t*>(addr)));
 }
 
 // ULazyObjectProperty
