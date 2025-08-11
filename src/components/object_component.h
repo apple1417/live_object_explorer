@@ -40,6 +40,7 @@ class ObjectComponent : public AbstractComponent {
 
     ~ObjectComponent() override = default;
     void draw(const ObjectWindowSettings& settings) override;
+    [[nodiscard]] bool passes_filter(const ImGuiTextFilter& filter) override;
 };
 
 class ClassComponent : public ObjectComponent {

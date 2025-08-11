@@ -18,6 +18,7 @@ class EnumComponent : public AbstractComponent {
    protected:
     std::vector<EnumNameInfo<T>> name_info;
     T* addr;
+    const char* preview{};
     bool flags;
 
    public:
@@ -55,6 +56,10 @@ class EnumComponent : public AbstractComponent {
         }
 
         this->flags = false;
+    }
+
+    [[nodiscard]] bool passes_filter(const ImGuiTextFilter& filter) override {
+        return AbstractComponent::passes_filter(filter) || filter.PassFilter(this->preview);
     }
 
     ~EnumComponent() override = default;

@@ -60,12 +60,14 @@ template <typename T>
 void draw_enum(const std::string& name,
                T* addr,
                const std::vector<EnumNameInfo<T>>& name_info,
+               const char*& preview,
                bool& flags,
                const ObjectWindowSettings& settings,
                ImGuiDataType data_type) {
     auto value = *addr;
+    preview = pick_preview(value, name_info, flags, settings);
 
-    if (ImGui::BeginCombo(name.c_str(), pick_preview(value, name_info, flags, settings))) {
+    if (ImGui::BeginCombo(name.c_str(), preview)) {
         ImGui::Checkbox("Display As Flags", &flags);
 
         ImGui::BeginDisabled(!settings.editable);
@@ -95,35 +97,43 @@ void draw_enum(const std::string& name,
 
 template <>
 void Int8EnumComponent::draw(const ObjectWindowSettings& settings) {
-    draw_enum(this->name, this->addr, this->name_info, this->flags, settings, ImGuiDataType_S8);
+    draw_enum(this->name, this->addr, this->name_info, this->preview, this->flags, settings,
+              ImGuiDataType_S8);
 }
 template <>
 void Int16EnumComponent::draw(const ObjectWindowSettings& settings) {
-    draw_enum(this->name, this->addr, this->name_info, this->flags, settings, ImGuiDataType_S16);
+    draw_enum(this->name, this->addr, this->name_info, this->preview, this->flags, settings,
+              ImGuiDataType_S16);
 }
 template <>
 void Int32EnumComponent::draw(const ObjectWindowSettings& settings) {
-    draw_enum(this->name, this->addr, this->name_info, this->flags, settings, ImGuiDataType_S32);
+    draw_enum(this->name, this->addr, this->name_info, this->preview, this->flags, settings,
+              ImGuiDataType_S32);
 }
 template <>
 void Int64EnumComponent::draw(const ObjectWindowSettings& settings) {
-    draw_enum(this->name, this->addr, this->name_info, this->flags, settings, ImGuiDataType_S64);
+    draw_enum(this->name, this->addr, this->name_info, this->preview, this->flags, settings,
+              ImGuiDataType_S64);
 }
 template <>
 void UInt8EnumComponent::draw(const ObjectWindowSettings& settings) {
-    draw_enum(this->name, this->addr, this->name_info, this->flags, settings, ImGuiDataType_U8);
+    draw_enum(this->name, this->addr, this->name_info, this->preview, this->flags, settings,
+              ImGuiDataType_U8);
 }
 template <>
 void UInt16EnumComponent::draw(const ObjectWindowSettings& settings) {
-    draw_enum(this->name, this->addr, this->name_info, this->flags, settings, ImGuiDataType_U16);
+    draw_enum(this->name, this->addr, this->name_info, this->preview, this->flags, settings,
+              ImGuiDataType_U16);
 }
 template <>
 void UInt32EnumComponent::draw(const ObjectWindowSettings& settings) {
-    draw_enum(this->name, this->addr, this->name_info, this->flags, settings, ImGuiDataType_U32);
+    draw_enum(this->name, this->addr, this->name_info, this->preview, this->flags, settings,
+              ImGuiDataType_U32);
 }
 template <>
 void UInt64EnumComponent::draw(const ObjectWindowSettings& settings) {
-    draw_enum(this->name, this->addr, this->name_info, this->flags, settings, ImGuiDataType_U64);
+    draw_enum(this->name, this->addr, this->name_info, this->preview, this->flags, settings,
+              ImGuiDataType_U64);
 }
 
 }  // namespace live_object_explorer

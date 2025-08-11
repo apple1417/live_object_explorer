@@ -46,6 +46,11 @@ void ObjectComponent::draw(const ObjectWindowSettings& /*settings*/) {
     }
 }
 
+bool ObjectComponent::passes_filter(const ImGuiTextFilter& filter) {
+    return AbstractComponent::passes_filter(filter)
+           || filter.PassFilter(this->cached_obj_name.c_str());
+}
+
 ClassComponent::ClassComponent(std::string&& name,
                                unrealsdk::unreal::UObject** addr,
                                unrealsdk::unreal::UClass* property_class,

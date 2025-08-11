@@ -35,7 +35,7 @@ class AbstractComponent {
      * @param filter The filter to check.
      * @return True if it passes.
      */
-    [[nodiscard]] bool passes_filter(const ImGuiTextFilter& filter) const;
+    [[nodiscard]] virtual bool passes_filter(const ImGuiTextFilter& filter);
 };
 
 }  // namespace live_object_explorer

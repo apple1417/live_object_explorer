@@ -31,4 +31,9 @@ void ObjectFieldComponent::draw(const ObjectWindowSettings& settings) {
     }
 }
 
+bool ObjectFieldComponent::passes_filter(const ImGuiTextFilter& filter) {
+    return AbstractComponent::passes_filter(filter)
+           || filter.PassFilter(this->cached_obj_name.c_str());
+}
+
 }  // namespace live_object_explorer

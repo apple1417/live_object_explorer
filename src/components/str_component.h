@@ -9,6 +9,7 @@ namespace live_object_explorer {
 class StrComponent : public AbstractComponent {
    protected:
     unrealsdk::unreal::UnmanagedFString* addr;
+    std::string cached_str;
 
    public:
     /**
@@ -21,6 +22,7 @@ class StrComponent : public AbstractComponent {
 
     ~StrComponent() override = default;
     void draw(const ObjectWindowSettings& settings) override;
+    [[nodiscard]] bool passes_filter(const ImGuiTextFilter& filter) override;
 };
 
 }  // namespace live_object_explorer

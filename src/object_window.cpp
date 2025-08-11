@@ -71,13 +71,13 @@ void ObjectWindow::draw() {
         -(content_region.x - std::min(ImGui::GetFontSize() * 20.0F, content_region.x * 0.5F));
     // NOLINTEND(readability-magic-numbers)
 
-    this->filter.Draw("Filter", width);
-    auto filter_active = this->filter.IsActive();
+    this->settings.filter.Draw("Filter", width);
+    auto filter_active = this->settings.filter.IsActive();
 
     for (auto& section : this->sections) {
         // When you start using the filter, force all nodes open
         // When you stop, force all nodes closed
-        if (filter_active != this->filter_active_last_time) {
+        if (filter_active != this->settings.filter_active_last_time) {
             ImGui::SetNextItemOpen(filter_active);
         }
 
@@ -85,7 +85,7 @@ void ObjectWindow::draw() {
             ImGui::PushItemWidth(width);
 
             for (auto& component : section.components) {
-                if (component->passes_filter(this->filter)) {
+                if (component->passes_filter(this->settings.filter)) {
                     component->draw(this->settings);
                 }
             }
@@ -95,7 +95,7 @@ void ObjectWindow::draw() {
         }
     }
 
-    this->filter_active_last_time = filter_active;
+    this->settings.filter_active_last_time = filter_active;
 }
 
 void ObjectWindow::append_native_section(UObject* obj) {
@@ -107,7 +107,8 @@ void ObjectWindow::append_native_section(UObject* obj) {
         // Read off the real type of object flags, since it changes
         std::make_unique<ScalarComponent<std::remove_reference_t<decltype(obj->ObjectFlags())>>>(
             "ObjectFlags", &obj->ObjectFlags()));
-    components.emplace_back(std::make_unique<Int32Component>("InternalIndex", &obj->InternalIndex()));
+    components.emplace_back(
+        std::make_unique<Int32Component>("InternalIndex", &obj->InternalIndex()));
 
     // TODO: proper class component
     components.emplace_back(std::make_unique<ObjectComponent>(

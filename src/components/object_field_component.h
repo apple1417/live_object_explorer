@@ -23,6 +23,7 @@ class ObjectFieldComponent : public AbstractComponent {
 
     ~ObjectFieldComponent() override = default;
     void draw(const ObjectWindowSettings& settings) override;
+    [[nodiscard]] bool passes_filter(const ImGuiTextFilter& filter) override;
 };
 
 }  // namespace live_object_explorer

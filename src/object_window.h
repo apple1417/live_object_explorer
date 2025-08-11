@@ -11,6 +11,9 @@ struct ObjectWindowSettings {
     bool editable = false;
     bool hex = false;
     bool include_fields = false;
+
+    ImGuiTextFilter filter;
+    bool filter_active_last_time = false;
 };
 
 class ObjectWindow {
@@ -52,9 +55,6 @@ class ObjectWindow {
     };
 
     std::vector<ClassSection> sections;
-
-    ImGuiTextFilter filter;
-    bool filter_active_last_time = false;
 
     ObjectWindowSettings settings = {};
 
