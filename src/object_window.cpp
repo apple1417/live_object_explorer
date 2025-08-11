@@ -77,8 +77,16 @@ void ObjectWindow::draw() {
     for (auto& section : this->sections) {
         // When you start using the filter, force all nodes open
         // When you stop, force all nodes closed
+        ForceExpandTree expand_children = ForceExpandTree::NONE;
         if (filter_active != this->settings.filter_active_last_time) {
             ImGui::SetNextItemOpen(filter_active);
+            expand_children = filter_active ? ForceExpandTree::OPEN : ForceExpandTree::CLOSE;
+
+            // Now unfortunately, when we force close, TreeNode returns false, so we never draw any
+            // of the components, and never tell them to close.
+            // Instead, we'll store that we were force closed (clearing if we get force opened), so
+            // we can apply it when we next get opened
+            section.was_force_closed = !filter_active;
         }
 
         if (ImGui::TreeNode(section.header.c_str())) {
@@ -86,9 +94,13 @@ void ObjectWindow::draw() {
 
             for (auto& component : section.components) {
                 if (component->passes_filter(this->settings.filter)) {
-                    component->draw(this->settings);
+                    component->draw(
+                        this->settings,
+                        section.was_force_closed ? ForceExpandTree::CLOSE : expand_children, false);
                 }
             }
+
+            section.was_force_closed = false;
 
             ImGui::PopItemWidth();
             ImGui::TreePop();

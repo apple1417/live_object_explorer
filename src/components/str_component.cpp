@@ -9,7 +9,9 @@ namespace live_object_explorer {
 StrComponent::StrComponent(std::string&& name, UnmanagedFString* addr)
     : AbstractComponent(std::move(name)), addr(addr) {}
 
-void StrComponent::draw(const ObjectWindowSettings& /*settings*/) {
+void StrComponent::draw(const ObjectWindowSettings& /*settings*/,
+                        ForceExpandTree /*expand_children*/,
+                        bool /*show_all_children*/) {
     // TODO: editable
     ImGui::InputText(this->name.c_str(), this->cached_str.data(), this->cached_str.capacity() + 1,
                      ImGuiInputTextFlags_ReadOnly);

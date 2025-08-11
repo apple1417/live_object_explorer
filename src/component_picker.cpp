@@ -6,6 +6,7 @@
 #include "components/object_field_component.h"
 #include "components/scalar_component.h"
 #include "components/str_component.h"
+#include "components/struct_component.h"
 #include "components/unknown_component.h"
 
 using namespace unrealsdk::unreal;
@@ -292,7 +293,15 @@ void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& com
     components.emplace_back(std::make_unique<ObjectFieldComponent>(std::move(name), field));
 }
 
-// UStructProperty
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               UStructProperty* prop,
+                               std::string&& name,
+                               uintptr_t addr) {
+    components.emplace_back(
+        std::make_unique<StructComponent>(std::move(name), addr, prop->Struct()));
+}
+
 // UTextProperty
 
 template <>

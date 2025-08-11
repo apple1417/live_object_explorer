@@ -20,43 +20,63 @@ void draw_scalar(const std::string& name,
 }  // namespace
 
 template <>
-void Int8Component::draw(const ObjectWindowSettings& settings) {
+void Int8Component::draw(const ObjectWindowSettings& settings,
+                         ForceExpandTree /*expand_children*/,
+                         bool /*show_all_children*/) {
     draw_scalar(this->name, this->addr, settings, ImGuiDataType_S8);
 }
 template <>
-void Int16Component::draw(const ObjectWindowSettings& settings) {
+void Int16Component::draw(const ObjectWindowSettings& settings,
+                          ForceExpandTree /*expand_children*/,
+                          bool /*show_all_children*/) {
     draw_scalar(this->name, this->addr, settings, ImGuiDataType_S16);
 }
 template <>
-void Int32Component::draw(const ObjectWindowSettings& settings) {
+void Int32Component::draw(const ObjectWindowSettings& settings,
+                          ForceExpandTree /*expand_children*/,
+                          bool /*show_all_children*/) {
     draw_scalar(this->name, this->addr, settings, ImGuiDataType_S32);
 }
 template <>
-void Int64Component::draw(const ObjectWindowSettings& settings) {
+void Int64Component::draw(const ObjectWindowSettings& settings,
+                          ForceExpandTree /*expand_children*/,
+                          bool /*show_all_children*/) {
     draw_scalar(this->name, this->addr, settings, ImGuiDataType_S64);
 }
 template <>
-void UInt8Component::draw(const ObjectWindowSettings& settings) {
+void UInt8Component::draw(const ObjectWindowSettings& settings,
+                          ForceExpandTree /*expand_children*/,
+                          bool /*show_all_children*/) {
     draw_scalar(this->name, this->addr, settings, ImGuiDataType_U8);
 }
 template <>
-void UInt16Component::draw(const ObjectWindowSettings& settings) {
+void UInt16Component::draw(const ObjectWindowSettings& settings,
+                           ForceExpandTree /*expand_children*/,
+                           bool /*show_all_children*/) {
     draw_scalar(this->name, this->addr, settings, ImGuiDataType_U16);
 }
 template <>
-void UInt32Component::draw(const ObjectWindowSettings& settings) {
+void UInt32Component::draw(const ObjectWindowSettings& settings,
+                           ForceExpandTree /*expand_children*/,
+                           bool /*show_all_children*/) {
     draw_scalar(this->name, this->addr, settings, ImGuiDataType_U32);
 }
 template <>
-void UInt64Component::draw(const ObjectWindowSettings& settings) {
+void UInt64Component::draw(const ObjectWindowSettings& settings,
+                           ForceExpandTree /*expand_children*/,
+                           bool /*show_all_children*/) {
     draw_scalar(this->name, this->addr, settings, ImGuiDataType_U64);
 }
 template <>
-void FloatComponent::draw(const ObjectWindowSettings& settings) {
+void FloatComponent::draw(const ObjectWindowSettings& settings,
+                          ForceExpandTree /*expand_children*/,
+                          bool /*show_all_children*/) {
     draw_scalar(this->name, this->addr, settings, ImGuiDataType_Float);
 }
 template <>
-void DoubleComponent::draw(const ObjectWindowSettings& settings) {
+void DoubleComponent::draw(const ObjectWindowSettings& settings,
+                           ForceExpandTree /*expand_children*/,
+                           bool /*show_all_children*/) {
     draw_scalar(this->name, this->addr, settings, ImGuiDataType_Double);
 }
 

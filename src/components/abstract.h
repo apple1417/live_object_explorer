@@ -7,6 +7,12 @@ namespace live_object_explorer {
 
 struct ObjectWindowSettings;
 
+enum class ForceExpandTree : uint8_t {
+    NONE,
+    OPEN,
+    CLOSE,
+};
+
 class AbstractComponent {
    protected:
     std::string name;
@@ -26,8 +32,12 @@ class AbstractComponent {
      * @brief Draws this component.
      *
      * @param settings Settings from the parent window.
+     * @param expand_children If to force expand any nested tree nodes this component draws.
+     * @param show_all_children When true, show all nested children, don't filter them.
      */
-    virtual void draw(const ObjectWindowSettings& settings) = 0;
+    virtual void draw(const ObjectWindowSettings& settings,
+                      ForceExpandTree expand_children,
+                      bool show_all_children) = 0;
 
     /**
      * @brief Checks if this component passes the given text filter.

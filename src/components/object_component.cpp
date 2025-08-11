@@ -20,7 +20,9 @@ bool ObjectComponent::may_set_to_object(UObject* obj) const {
     return obj->Class()->is_instance(this->property_class);
 }
 
-void ObjectComponent::draw(const ObjectWindowSettings& /*settings*/) {
+void ObjectComponent::draw(const ObjectWindowSettings& /*settings*/,
+                           ForceExpandTree /*expand_children*/,
+                           bool /*show_all_children*/) {
     auto current_obj = *this->addr;
     if (this->cached_obj != current_obj) {
         this->cached_obj_name =

@@ -26,7 +26,9 @@ class BoolComponent : public AbstractComponent {
     BoolComponent(std::string&& name, field_mask_type* addr, field_mask_type mask);
 
     ~BoolComponent() override = default;
-    void draw(const ObjectWindowSettings& settings) override;
+    void draw(const ObjectWindowSettings& settings,
+              ForceExpandTree expand_children,
+              bool show_all_children) override;
 };
 
 }  // namespace live_object_explorer

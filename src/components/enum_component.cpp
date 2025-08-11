@@ -96,42 +96,58 @@ void draw_enum(const std::string& name,
 }  // namespace
 
 template <>
-void Int8EnumComponent::draw(const ObjectWindowSettings& settings) {
+void Int8EnumComponent::draw(const ObjectWindowSettings& settings,
+                             ForceExpandTree /*expand_children*/,
+                             bool /*show_all_children*/) {
     draw_enum(this->name, this->addr, this->name_info, this->preview, this->flags, settings,
               ImGuiDataType_S8);
 }
 template <>
-void Int16EnumComponent::draw(const ObjectWindowSettings& settings) {
+void Int16EnumComponent::draw(const ObjectWindowSettings& settings,
+                              ForceExpandTree /*expand_children*/,
+                              bool /*show_all_children*/) {
     draw_enum(this->name, this->addr, this->name_info, this->preview, this->flags, settings,
               ImGuiDataType_S16);
 }
 template <>
-void Int32EnumComponent::draw(const ObjectWindowSettings& settings) {
+void Int32EnumComponent::draw(const ObjectWindowSettings& settings,
+                              ForceExpandTree /*expand_children*/,
+                              bool /*show_all_children*/) {
     draw_enum(this->name, this->addr, this->name_info, this->preview, this->flags, settings,
               ImGuiDataType_S32);
 }
 template <>
-void Int64EnumComponent::draw(const ObjectWindowSettings& settings) {
+void Int64EnumComponent::draw(const ObjectWindowSettings& settings,
+                              ForceExpandTree /*expand_children*/,
+                              bool /*show_all_children*/) {
     draw_enum(this->name, this->addr, this->name_info, this->preview, this->flags, settings,
               ImGuiDataType_S64);
 }
 template <>
-void UInt8EnumComponent::draw(const ObjectWindowSettings& settings) {
+void UInt8EnumComponent::draw(const ObjectWindowSettings& settings,
+                              ForceExpandTree /*expand_children*/,
+                              bool /*show_all_children*/) {
     draw_enum(this->name, this->addr, this->name_info, this->preview, this->flags, settings,
               ImGuiDataType_U8);
 }
 template <>
-void UInt16EnumComponent::draw(const ObjectWindowSettings& settings) {
+void UInt16EnumComponent::draw(const ObjectWindowSettings& settings,
+                               ForceExpandTree /*expand_children*/,
+                               bool /*show_all_children*/) {
     draw_enum(this->name, this->addr, this->name_info, this->preview, this->flags, settings,
               ImGuiDataType_U16);
 }
 template <>
-void UInt32EnumComponent::draw(const ObjectWindowSettings& settings) {
+void UInt32EnumComponent::draw(const ObjectWindowSettings& settings,
+                               ForceExpandTree /*expand_children*/,
+                               bool /*show_all_children*/) {
     draw_enum(this->name, this->addr, this->name_info, this->preview, this->flags, settings,
               ImGuiDataType_U32);
 }
 template <>
-void UInt64EnumComponent::draw(const ObjectWindowSettings& settings) {
+void UInt64EnumComponent::draw(const ObjectWindowSettings& settings,
+                               ForceExpandTree /*expand_children*/,
+                               bool /*show_all_children*/) {
     draw_enum(this->name, this->addr, this->name_info, this->preview, this->flags, settings,
               ImGuiDataType_U64);
 }

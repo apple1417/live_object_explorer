@@ -22,7 +22,9 @@ class ObjectFieldComponent : public AbstractComponent {
     ObjectFieldComponent(std::string&& name, unrealsdk::unreal::UObject* obj);
 
     ~ObjectFieldComponent() override = default;
-    void draw(const ObjectWindowSettings& settings) override;
+    void draw(const ObjectWindowSettings& settings,
+              ForceExpandTree expand_children,
+              bool show_all_children) override;
     [[nodiscard]] bool passes_filter(const ImGuiTextFilter& filter) override;
 };
 

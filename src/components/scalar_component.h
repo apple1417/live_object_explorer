@@ -22,7 +22,9 @@ class ScalarComponent : public AbstractComponent {
     ScalarComponent(std::string&& name, T* addr) : AbstractComponent(std::move(name)), addr(addr) {}
 
     ~ScalarComponent() override = default;
-    void draw(const ObjectWindowSettings& settings) override;
+    void draw(const ObjectWindowSettings& settings,
+              ForceExpandTree expand_children,
+              bool show_all_children) override;
 };
 
 using Int8Component = ScalarComponent<int8_t>;
@@ -37,25 +39,45 @@ using FloatComponent = ScalarComponent<float32_t>;
 using DoubleComponent = ScalarComponent<float64_t>;
 
 template <>
-void Int8Component::draw(const ObjectWindowSettings& settings);
+void Int8Component::draw(const ObjectWindowSettings& settings,
+                         ForceExpandTree expand_children,
+                         bool show_all_children);
 template <>
-void Int16Component::draw(const ObjectWindowSettings& settings);
+void Int16Component::draw(const ObjectWindowSettings& settings,
+                          ForceExpandTree expand_children,
+                          bool show_all_children);
 template <>
-void Int32Component::draw(const ObjectWindowSettings& settings);
+void Int32Component::draw(const ObjectWindowSettings& settings,
+                          ForceExpandTree expand_children,
+                          bool show_all_children);
 template <>
-void Int64Component::draw(const ObjectWindowSettings& settings);
+void Int64Component::draw(const ObjectWindowSettings& settings,
+                          ForceExpandTree expand_children,
+                          bool show_all_children);
 template <>
-void UInt8Component::draw(const ObjectWindowSettings& settings);
+void UInt8Component::draw(const ObjectWindowSettings& settings,
+                          ForceExpandTree expand_children,
+                          bool show_all_children);
 template <>
-void UInt16Component::draw(const ObjectWindowSettings& settings);
+void UInt16Component::draw(const ObjectWindowSettings& settings,
+                           ForceExpandTree expand_children,
+                           bool show_all_children);
 template <>
-void UInt32Component::draw(const ObjectWindowSettings& settings);
+void UInt32Component::draw(const ObjectWindowSettings& settings,
+                           ForceExpandTree expand_children,
+                           bool show_all_children);
 template <>
-void UInt64Component::draw(const ObjectWindowSettings& settings);
+void UInt64Component::draw(const ObjectWindowSettings& settings,
+                           ForceExpandTree expand_children,
+                           bool show_all_children);
 template <>
-void FloatComponent::draw(const ObjectWindowSettings& settings);
+void FloatComponent::draw(const ObjectWindowSettings& settings,
+                          ForceExpandTree expand_children,
+                          bool show_all_children);
 template <>
-void DoubleComponent::draw(const ObjectWindowSettings& settings);
+void DoubleComponent::draw(const ObjectWindowSettings& settings,
+                           ForceExpandTree expand_children,
+                           bool show_all_children);
 
 }  // namespace live_object_explorer
 

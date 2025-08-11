@@ -11,7 +11,9 @@ UnknownComponent::UnknownComponent(std::string&& name, std::string_view cls_name
                       std::string_view{this->name}.substr(0, this->length_before_hash),
                       cls_name)) {}
 
-void UnknownComponent::draw(const ObjectWindowSettings& settings) {
+void UnknownComponent::draw(const ObjectWindowSettings& settings,
+                            ForceExpandTree /*expand_children*/,
+                            bool /*show_all_children*/) {
     if (!settings.include_fields) {
         return;
     }
@@ -24,7 +26,9 @@ UnknownPropertyComponent::UnknownPropertyComponent(std::string&& name, std::stri
                       std::string_view{this->name}.substr(0, this->length_before_hash),
                       cls_name)) {}
 
-void UnknownPropertyComponent::draw(const ObjectWindowSettings& /*settings*/) {
+void UnknownPropertyComponent::draw(const ObjectWindowSettings& /*settings*/,
+                                    ForceExpandTree /*expand_children*/,
+                                    bool /*show_all_children*/) {
     ImGui::TextDisabled("%s", this->msg.c_str());
 }
 

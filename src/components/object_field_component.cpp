@@ -15,7 +15,9 @@ ObjectFieldComponent::ObjectFieldComponent(std::string&& name, UObject* obj)
                                   obj->Class()->Name(),
                                   unrealsdk::utils::narrow(obj->get_path_name()))) {}
 
-void ObjectFieldComponent::draw(const ObjectWindowSettings& settings) {
+void ObjectFieldComponent::draw(const ObjectWindowSettings& settings,
+                                ForceExpandTree /*expand_children*/,
+                                bool /*show_all_children*/) {
     if (!settings.include_fields) {
         return;
     }

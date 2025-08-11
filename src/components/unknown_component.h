@@ -20,7 +20,9 @@ class UnknownComponent : public AbstractComponent {
     UnknownComponent(std::string&& name, std::string_view cls_name);
 
     ~UnknownComponent() override = default;
-    void draw(const ObjectWindowSettings& settings) override;
+    void draw(const ObjectWindowSettings& settings,
+              ForceExpandTree expand_children,
+              bool show_all_children) override;
 };
 
 class UnknownPropertyComponent : public AbstractComponent {
@@ -37,7 +39,9 @@ class UnknownPropertyComponent : public AbstractComponent {
     UnknownPropertyComponent(std::string&& name, std::string_view cls_name);
 
     ~UnknownPropertyComponent() override = default;
-    void draw(const ObjectWindowSettings& settings) override;
+    void draw(const ObjectWindowSettings& settings,
+              ForceExpandTree expand_children,
+              bool show_all_children) override;
 };
 
 }  // namespace live_object_explorer

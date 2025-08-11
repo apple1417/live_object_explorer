@@ -63,7 +63,9 @@ class EnumComponent : public AbstractComponent {
     }
 
     ~EnumComponent() override = default;
-    void draw(const ObjectWindowSettings& settings) override;
+    void draw(const ObjectWindowSettings& settings,
+              ForceExpandTree expand_children,
+              bool show_all_children) override;
 };
 
 using Int8EnumComponent = EnumComponent<int8_t>;
@@ -76,21 +78,37 @@ using UInt32EnumComponent = EnumComponent<uint32_t>;
 using UInt64EnumComponent = EnumComponent<uint64_t>;
 
 template <>
-void Int8EnumComponent::draw(const ObjectWindowSettings& settings);
+void Int8EnumComponent::draw(const ObjectWindowSettings& settings,
+                             ForceExpandTree expand_children,
+                             bool show_all_children);
 template <>
-void Int16EnumComponent::draw(const ObjectWindowSettings& settings);
+void Int16EnumComponent::draw(const ObjectWindowSettings& settings,
+                              ForceExpandTree expand_children,
+                              bool show_all_children);
 template <>
-void Int32EnumComponent::draw(const ObjectWindowSettings& settings);
+void Int32EnumComponent::draw(const ObjectWindowSettings& settings,
+                              ForceExpandTree expand_children,
+                              bool show_all_children);
 template <>
-void Int64EnumComponent::draw(const ObjectWindowSettings& settings);
+void Int64EnumComponent::draw(const ObjectWindowSettings& settings,
+                              ForceExpandTree expand_children,
+                              bool show_all_children);
 template <>
-void UInt8EnumComponent::draw(const ObjectWindowSettings& settings);
+void UInt8EnumComponent::draw(const ObjectWindowSettings& settings,
+                              ForceExpandTree expand_children,
+                              bool show_all_children);
 template <>
-void UInt16EnumComponent::draw(const ObjectWindowSettings& settings);
+void UInt16EnumComponent::draw(const ObjectWindowSettings& settings,
+                               ForceExpandTree expand_children,
+                               bool show_all_children);
 template <>
-void UInt32EnumComponent::draw(const ObjectWindowSettings& settings);
+void UInt32EnumComponent::draw(const ObjectWindowSettings& settings,
+                               ForceExpandTree expand_children,
+                               bool show_all_children);
 template <>
-void UInt64EnumComponent::draw(const ObjectWindowSettings& settings);
+void UInt64EnumComponent::draw(const ObjectWindowSettings& settings,
+                               ForceExpandTree expand_children,
+                               bool show_all_children);
 
 }  // namespace live_object_explorer
 

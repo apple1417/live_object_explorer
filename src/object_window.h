@@ -52,6 +52,7 @@ class ObjectWindow {
     struct ClassSection {
         std::string header;
         std::vector<std::unique_ptr<AbstractComponent>> components;
+        bool was_force_closed;
     };
 
     std::vector<ClassSection> sections;
