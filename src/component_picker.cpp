@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "component_picker.h"
+#include "components/array_component.h"
 #include "components/bool_component.h"
 #include "components/enum_component.h"
 #include "components/object_component.h"
@@ -57,7 +58,14 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 #pragma clang diagnostic ignored "-Wunused-function"
 #endif
 
-// UArrayProperty
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               UArrayProperty* prop,
+                               std::string&& name,
+                               uintptr_t addr) {
+    components.emplace_back(std::make_unique<ArrayComponent>(
+        std::move(name), reinterpret_cast<TArray<void>*>(addr), prop->Inner()));
+}
 
 template <>
 void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
@@ -371,6 +379,26 @@ void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& component
         [&components](UObject* obj) {
             // If the cast fails, use void to explictly get the fallback
             auto name = std::format("{}##comp_{}", obj->Name(), components.size());
+            insert_field_component<void>(components, obj, std::move(name));
+        });
+}
+
+void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                      unrealsdk::unreal::TArray<void>* arr,
+                      unrealsdk::unreal::UProperty* inner_prop,
+                      size_t idx) {
+    cast(
+        inner_prop,
+        [&components, arr, idx]<typename T>(T* inner_prop) {
+            // Index alone is probably unique, but some components assume the hash exists, so might
+            // as well add the rest
+            auto name = std::format("[{}]##arr_{}", idx, components.size());
+            auto addr = reinterpret_cast<uintptr_t>(arr->data) + (idx * inner_prop->ElementSize());
+
+            insert_property_component<T>(components, inner_prop, std::move(name), addr);
+        },
+        [&components, idx](UObject* obj) {
+            auto name = std::format("[{}]##arr_{}", idx, components.size());
             insert_field_component<void>(components, obj, std::move(name));
         });
 }

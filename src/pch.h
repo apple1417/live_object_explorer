@@ -65,6 +65,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND h_wnd,
 #include <unrealsdk/unreal/find_class.h>
 #include <unrealsdk/unreal/structs/fname.h>
 #include <unrealsdk/unreal/structs/fstring.h>
+#include <unrealsdk/unreal/structs/tarray.h>
 #include <unrealsdk/unreal/wrappers/gobjects.h>
 #include <unrealsdk/unreal/wrappers/weak_pointer.h>
 #include <unrealsdk/unrealsdk.h>
