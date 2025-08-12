@@ -29,9 +29,10 @@ void ObjectComponent::draw(const ObjectWindowSettings& /*settings*/,
             current_obj == 0
                 ? NULL_OBJECT_NAME
                 : this->cached_obj_name = std::format(
-                      "{}'{}'", reinterpret_cast<UObject*>(current_obj)->Class()->Name(),
+                      "{}'{}'{}", reinterpret_cast<UObject*>(current_obj)->Class()->Name(),
                       unrealsdk::utils::narrow(
-                          reinterpret_cast<UObject*>(current_obj)->get_path_name()));
+                          reinterpret_cast<UObject*>(current_obj)->get_path_name()),
+                      std::string_view{this->name}.substr(this->length_before_hash));
 
         this->cached_obj = current_obj;
     }

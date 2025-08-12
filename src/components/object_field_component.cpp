@@ -11,9 +11,10 @@ ObjectFieldComponent::ObjectFieldComponent(std::string&& name, UObject* obj)
     : AbstractComponent(std::move(name)),
       ptr(obj),
       hashless_name(this->name.substr(0, this->length_before_hash)),
-      cached_obj_name(std::format("{}'{}'",
+      cached_obj_name(std::format("{}'{}'{}",
                                   obj->Class()->Name(),
-                                  unrealsdk::utils::narrow(obj->get_path_name()))) {}
+                                  unrealsdk::utils::narrow(obj->get_path_name()),
+                                  std::string_view{this->name}.substr(this->length_before_hash))) {}
 
 void ObjectFieldComponent::draw(const ObjectWindowSettings& settings,
                                 ForceExpandTree /*expand_children*/,
