@@ -2,6 +2,8 @@
 #include "component_picker.h"
 #include "components/array_component.h"
 #include "components/bool_component.h"
+#include "components/const_component.h"
+#include "components/delegate_component.h"
 #include "components/enum_component.h"
 #include "components/object_component.h"
 #include "components/object_field_component.h"
@@ -140,8 +142,21 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
         std::move(name), reinterpret_cast<UObject**>(addr), prop->PropertyClass()));
 }
 
-// UConst
-// UDelegateProperty
+template <>
+void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                            UConst* field,
+                            std::string&& name) {
+    components.emplace_back(std::make_unique<ConstTextComponent>(std::move(name), field->Value()));
+}
+
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               UDelegateProperty* prop,
+                               std::string&& name,
+                               uintptr_t addr) {
+    components.emplace_back(std::make_unique<DelegateComponent>(
+        std::move(name), reinterpret_cast<FScriptDelegate*>(addr), prop->Signature()));
+}
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
@@ -204,7 +219,12 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
         std::make_unique<FloatComponent>(std::move(name), reinterpret_cast<float32_t*>(addr)));
 }
 
-// UFunction
+template <>
+void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                            UFunction* field,
+                            std::string&& name) {
+    components.emplace_back(std::make_unique<ObjectFieldComponent>(std::move(name), field));
+}
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
