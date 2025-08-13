@@ -167,12 +167,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
         std::make_unique<DoubleComponent>(std::move(name), reinterpret_cast<float64_t*>(addr)));
 }
 
-template <>
-void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                            UEnum* field,
-                            std::string&& name) {
-    components.emplace_back(std::make_unique<ObjectFieldComponent>(std::move(name), field));
-}
+// UEnum
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
@@ -219,12 +214,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
         std::make_unique<FloatComponent>(std::move(name), reinterpret_cast<float32_t*>(addr)));
 }
 
-template <>
-void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                            UFunction* field,
-                            std::string&& name) {
-    components.emplace_back(std::make_unique<ObjectFieldComponent>(std::move(name), field));
-}
+// UFunction
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
@@ -293,15 +283,16 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
         std::move(name), reinterpret_cast<UObject**>(addr), prop->PropertyClass()));
 }
 
-// UProperty
-
 template <>
-void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                            UScriptStruct* field,
-                            std::string&& name) {
-    components.emplace_back(std::make_unique<ObjectFieldComponent>(std::move(name), field));
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               UProperty* prop,
+                               std::string&& name,
+                               uintptr_t addr) {
+    // Just forward directly to the fallback
+    insert_property_component<void>(components, prop, std::move(name), addr);
 }
 
+// UScriptStruct
 // USoftClassProperty
 // USoftObjectProperty
 
