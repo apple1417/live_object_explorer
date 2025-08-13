@@ -8,6 +8,7 @@ namespace live_object_explorer {
 
 class ConstStrComponent : public AbstractComponent {
    protected:
+    std::string hashless_name;
     std::string str;
 
    public:
@@ -23,22 +24,24 @@ class ConstStrComponent : public AbstractComponent {
     void draw(const ObjectWindowSettings& settings,
               ForceExpandTree expand_children,
               bool show_all_children) override;
+    [[nodiscard]] bool passes_filter(const ImGuiTextFilter& filter) override;
 };
 
-class ConstTextComponent : public AbstractComponent {
-   protected:
-    std::string str;
-
+// Shows the string as disabled
+class ConstDisabledStrComponent : public ConstStrComponent {
    public:
-    /**
-     * @brief Creates a new component showing a string in an uneditable text box.
-     *
-     * @param name The component's name. May include hashes.
-     * @param str The string to display.
-     */
-    ConstTextComponent(std::string&& name, std::string&& str);
+    using ConstStrComponent::ConstStrComponent;
 
-    ~ConstTextComponent() override = default;
+    void draw(const ObjectWindowSettings& settings,
+              ForceExpandTree expand_children,
+              bool show_all_children) override;
+};
+
+// Shows the string as an (uneditable) input text box
+class ConstTextComponent : public ConstStrComponent {
+   public:
+    using ConstStrComponent::ConstStrComponent;
+
     void draw(const ObjectWindowSettings& settings,
               ForceExpandTree expand_children,
               bool show_all_children) override;

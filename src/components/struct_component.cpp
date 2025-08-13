@@ -13,7 +13,8 @@ StructComponent::StructComponent(std::string&& name,
                                  unrealsdk::unreal::UStruct* ustruct)
     : AbstractComponent(std::move(name)), was_force_closed(false) {
     for (auto field : ustruct->fields()) {
-        insert_component(this->components, field, addr);
+        // We only expect properties, in case we get any fields just stick them in the same list
+        insert_component(this->components, this->components, field, addr);
     }
 }
 

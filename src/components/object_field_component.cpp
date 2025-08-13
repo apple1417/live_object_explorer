@@ -16,13 +16,9 @@ ObjectFieldComponent::ObjectFieldComponent(std::string&& name, UObject* obj)
                                   unrealsdk::utils::narrow(obj->get_path_name()),
                                   std::string_view{this->name}.substr(this->length_before_hash))) {}
 
-void ObjectFieldComponent::draw(const ObjectWindowSettings& settings,
+void ObjectFieldComponent::draw(const ObjectWindowSettings& /*settings*/,
                                 ForceExpandTree /*expand_children*/,
                                 bool /*show_all_children*/) {
-    if (!settings.include_fields) {
-        return;
-    }
-
     ImGui::Text("%s:", this->hashless_name.c_str());
     ImGui::SameLine();
     if (!this->ptr) {

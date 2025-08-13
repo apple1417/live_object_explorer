@@ -10,7 +10,6 @@ class AbstractComponent;
 struct ObjectWindowSettings {
     bool editable = false;
     bool hex = false;
-    bool include_fields = false;
 
     ImGuiTextFilter filter;
     bool filter_active_last_time = false;
@@ -55,7 +54,8 @@ class ObjectWindow {
         bool was_force_closed;
     };
 
-    std::vector<ClassSection> sections;
+    std::vector<ClassSection> prop_sections;
+    std::vector<ClassSection> field_sections;
 
     ObjectWindowSettings settings = {};
 

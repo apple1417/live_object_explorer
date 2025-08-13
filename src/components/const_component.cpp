@@ -5,16 +5,27 @@
 namespace live_object_explorer {
 
 ConstStrComponent::ConstStrComponent(std::string&& name, std::string&& str)
-    : AbstractComponent(std::move(name)), str(std::move(str)) {}
+    : AbstractComponent(std::move(name)),
+      hashless_name(this->name.substr(0, this->length_before_hash)),
+      str(std::move(str)) {}
 
 void ConstStrComponent::draw(const ObjectWindowSettings& /*settings*/,
                              ForceExpandTree /*expand_children*/,
                              bool /*show_all_children*/) {
-    ImGui::Text("%s: %s", this->name.c_str(), this->str.c_str());
+    ImGui::Text("%s: %s", this->hashless_name.c_str(), this->str.c_str());
 }
 
-ConstTextComponent::ConstTextComponent(std::string&& name, std::string&& str)
-    : AbstractComponent(std::move(name)), str(std::move(str)) {}
+bool ConstStrComponent::passes_filter(const ImGuiTextFilter& filter) {
+    return AbstractComponent::passes_filter(filter) || filter.PassFilter(this->str.c_str());
+}
+
+void ConstDisabledStrComponent::draw(const ObjectWindowSettings& /*settings*/,
+                                     ForceExpandTree /*expand_children*/,
+                                     bool /*show_all_children*/) {
+    ImGui::Text("%s:", this->hashless_name.c_str());
+    ImGui::SameLine();
+    ImGui::TextDisabled("%s", this->str.c_str());
+}
 
 void ConstTextComponent::draw(const ObjectWindowSettings& /*settings*/,
                               ForceExpandTree /*expand_children*/,

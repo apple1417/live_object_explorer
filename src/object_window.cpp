@@ -4,7 +4,6 @@
 #include "components/abstract.h"
 #include "components/object_component.h"
 #include "components/scalar_component.h"
-#include "components/unknown_component.h"
 
 using namespace unrealsdk::unreal;
 
@@ -27,13 +26,18 @@ ObjectWindow::ObjectWindow(UObject* obj)
                                         obj->Class()->Name(),
                                         unrealsdk::utils::narrow(obj->get_path_name()))) {
     for (UStruct* cls = obj->Class(); cls != nullptr; cls = cls->SuperField()) {
-        this->sections.emplace_back(
-            std::format("{}##section_{}", cls->Name(), this->sections.size()),
+        this->prop_sections.emplace_back(
+            std::format("{}##prop_section_{}", cls->Name(), this->prop_sections.size()),
+            decltype(ClassSection::components){});
+        this->field_sections.emplace_back(
+            std::format("{}##field_section_{}", cls->Name(), this->prop_sections.size()),
             decltype(ClassSection::components){});
 
-        auto& components = this->sections.back().components;
+        auto& prop_components = this->prop_sections.back().components;
+        auto& field_components = this->field_sections.back().components;
         for (auto field = cls->Children(); field != nullptr; field = field->Next()) {
-            insert_component(components, field, reinterpret_cast<uintptr_t>(obj));
+            insert_component(prop_components, field_components, field,
+                             reinterpret_cast<uintptr_t>(obj));
         }
     }
     this->append_native_section(obj);
@@ -43,15 +47,12 @@ const std::string& ObjectWindow::get_id() const {
     return this->id;
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void ObjectWindow::draw() {
     if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("Settings")) {
-            // TODO
-            // ImGui::MenuItem("Enable Editing", nullptr, &this->settings.editable);
-            ImGui::MenuItem("Hex Integers", nullptr, &this->settings.hex);
-            ImGui::MenuItem("Show UFields", nullptr, &this->settings.include_fields);
-            ImGui::EndMenu();
-        }
+        // TODO
+        ImGui::MenuItem("Enable Editing", nullptr, &this->settings.editable, false);
+        ImGui::MenuItem("Hex Integers", nullptr, &this->settings.hex);
 
         ImGui::EndMenuBar();
     }
@@ -61,7 +62,8 @@ void ObjectWindow::draw() {
         ImGui::TextDisabled("Object has been garbage collected");
 
         // Might as well free up some memory early
-        this->sections.clear();
+        this->prop_sections.clear();
+        this->field_sections.clear();
         return;
     }
 
@@ -74,46 +76,54 @@ void ObjectWindow::draw() {
     this->settings.filter.Draw("Filter", width);
     auto filter_active = this->settings.filter.IsActive();
 
-    for (auto& section : this->sections) {
-        // When you start using the filter, force all nodes open
-        // When you stop, force all nodes closed
-        ForceExpandTree expand_children = ForceExpandTree::NONE;
-        if (filter_active != this->settings.filter_active_last_time) {
-            ImGui::SetNextItemOpen(filter_active);
-            expand_children = filter_active ? ForceExpandTree::OPEN : ForceExpandTree::CLOSE;
+    auto draw_sections = [this, filter_active, width](std::vector<ClassSection>& section_list) {
+        for (auto& section : section_list) {
+            // When you start using the filter, force all nodes open
+            // When you stop, force all nodes closed
+            ForceExpandTree expand_children = ForceExpandTree::NONE;
+            if (filter_active != this->settings.filter_active_last_time) {
+                ImGui::SetNextItemOpen(filter_active);
+                expand_children = filter_active ? ForceExpandTree::OPEN : ForceExpandTree::CLOSE;
 
-            // Now unfortunately, when we force close, TreeNode returns false, so we never draw any
-            // of the components, and never tell them to close.
-            // Instead, we'll store that we were force closed (clearing if we get force opened), so
-            // we can apply it when we next get opened
-            section.was_force_closed = !filter_active;
-        }
-
-        if (ImGui::TreeNode(section.header.c_str())) {
-            ImGui::PushItemWidth(width);
-
-            for (auto& component : section.components) {
-                if (component->passes_filter(this->settings.filter)) {
-                    component->draw(
-                        this->settings,
-                        section.was_force_closed ? ForceExpandTree::CLOSE : expand_children, false);
-                }
+                // Now unfortunately, when we force close, TreeNode returns false, so we never draw
+                // any of the components, and never tell them to close. Instead, we'll store that we
+                // were force closed (clearing if we get force opened), so we can apply it when we
+                // next get opened
+                section.was_force_closed = !filter_active;
             }
 
-            section.was_force_closed = false;
+            if (ImGui::TreeNode(section.header.c_str())) {
+                ImGui::PushItemWidth(width);
 
-            ImGui::PopItemWidth();
-            ImGui::TreePop();
+                for (auto& component : section.components) {
+                    if (component->passes_filter(this->settings.filter)) {
+                        component->draw(
+                            this->settings,
+                            section.was_force_closed ? ForceExpandTree::CLOSE : expand_children,
+                            false);
+                    }
+                }
+
+                section.was_force_closed = false;
+
+                ImGui::PopItemWidth();
+                ImGui::TreePop();
+            }
         }
-    }
+    };
+
+    ImGui::SeparatorText("Properties");
+    draw_sections(this->prop_sections);
+    ImGui::SeparatorText("Class Fields");
+    draw_sections(this->field_sections);
 
     this->settings.filter_active_last_time = filter_active;
 }
 
 void ObjectWindow::append_native_section(UObject* obj) {
-    auto section_name = std::format("Native##section_{}", this->sections.size());
-    this->sections.emplace_back(section_name, decltype(ClassSection::components){});
-    auto& components = this->sections.back().components;
+    auto section_name = std::format("Native##section_{}", this->prop_sections.size());
+    this->prop_sections.emplace_back(section_name, decltype(ClassSection::components){});
+    auto& components = this->prop_sections.back().components;
 
     components.emplace_back(
         // Read off the real type of object flags, since it changes

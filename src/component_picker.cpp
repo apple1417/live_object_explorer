@@ -10,7 +10,6 @@
 #include "components/scalar_component.h"
 #include "components/str_component.h"
 #include "components/struct_component.h"
-#include "components/unknown_component.h"
 
 using namespace unrealsdk::unreal;
 
@@ -31,8 +30,9 @@ template <typename T>
 void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
                             T* field,
                             std::string&& name) {
-    components.emplace_back(std::make_unique<UnknownComponent>(
-        std::move(name), (std::string)((UObject*)field)->Class()->Name()));
+    components.emplace_back(std::make_unique<ConstDisabledStrComponent>(
+        std::move(name),
+        std::format("unrecognized field type {}", ((UObject*)field)->Class()->Name())));
 }
 
 /**
@@ -45,14 +45,14 @@ void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& com
  * @param addr The address of the value behind this component.
  */
 template <typename T>
-    requires std::is_base_of_v<UProperty, T>
+    requires std::disjunction_v<std::is_base_of<UProperty, T>, std::is_void<T>>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
                                T* prop,
                                std::string&& name,
                                uintptr_t /*addr*/) {
-    // Fallback to unknown
-    components.emplace_back(std::make_unique<UnknownPropertyComponent>(
-        std::move(name), (std::string)((UObject*)prop)->Class()->Name()));
+    components.emplace_back(std::make_unique<ConstDisabledStrComponent>(
+        std::move(name),
+        std::format("unrecognized property type {}", ((UObject*)prop)->Class()->Name())));
 }
 
 #ifdef __clang__  // for clangd more than anything
@@ -367,12 +367,13 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 }  // namespace
 
-void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& prop_components,
+                      std::vector<std::unique_ptr<AbstractComponent>>& field_components,
                       UObject* obj,
                       uintptr_t base_addr) {
     cast(
         obj,
-        [&components, base_addr]<typename T>(T* obj) {
+        [&prop_components, &field_components, base_addr]<typename T>(T* obj) {
             if constexpr (std::is_base_of_v<UProperty, T>) {
                 auto offset_internal = obj->Offset_Internal();
                 auto array_dim = obj->ArrayDim();
@@ -380,46 +381,53 @@ void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& component
                     auto element_size = obj->ElementSize();
                     for (decltype(array_dim) i = 0; i < array_dim; i++) {
                         auto name =
-                            std::format("{}[{}]##comp_{}", obj->Name(), i, components.size());
+                            std::format("{}[{}]##comp_{}", obj->Name(), i, prop_components.size());
                         auto addr = base_addr + offset_internal + (i * element_size);
 
-                        insert_property_component<T>(components, obj, std::move(name), addr);
+                        insert_property_component<T>(prop_components, obj, std::move(name), addr);
                     }
                 } else {
-                    auto name = std::format("{}##comp_{}", obj->Name(), components.size());
+                    auto name = std::format("{}##comp_{}", obj->Name(), prop_components.size());
                     auto addr = base_addr + offset_internal;
 
-                    insert_property_component<T>(components, obj, std::move(name), addr);
+                    insert_property_component<T>(prop_components, obj, std::move(name), addr);
                 }
             } else {
-                auto name = std::format("{}##comp_{}", obj->Name(), components.size());
-                insert_field_component(components, obj, std::move(name));
+                auto name = std::format("{}##comp_{}", obj->Name(), field_components.size());
+                insert_field_component(field_components, obj, std::move(name));
             }
         },
-        [&components](UObject* obj) {
-            // If the cast fails, use void to explictly get the fallback
-            auto name = std::format("{}##comp_{}", obj->Name(), components.size());
-            insert_field_component<void>(components, obj, std::move(name));
+        [&prop_components, &field_components](UObject* obj) {
+            // If the cast fails, still split by property or not
+            if (obj->is_instance(find_class<UProperty>())) {
+                auto name = std::format("{}##comp_{}", obj->Name(), prop_components.size());
+
+                // Use void to explictly get the fallback. Address is ignored for this one.
+                insert_property_component<void>(prop_components, obj, std::move(name), 0);
+            } else {
+                auto name = std::format("{}##comp_{}", obj->Name(), field_components.size());
+                insert_field_component<void>(field_components, obj, std::move(name));
+            }
         });
 }
 
-void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                      unrealsdk::unreal::TArray<void>* arr,
-                      unrealsdk::unreal::UProperty* inner_prop,
-                      size_t idx) {
+void insert_component_array(std::vector<std::unique_ptr<AbstractComponent>>& prop_components,
+                            unrealsdk::unreal::TArray<void>* arr,
+                            unrealsdk::unreal::UProperty* inner_prop,
+                            size_t idx) {
     cast(
         inner_prop,
-        [&components, arr, idx]<typename T>(T* inner_prop) {
+        [&prop_components, arr, idx]<typename T>(T* inner_prop) {
             // Index alone is probably unique, but some components assume the hash exists, so might
             // as well add the rest
-            auto name = std::format("[{}]##arr_{}", idx, components.size());
+            auto name = std::format("[{}]##arr_{}", idx, prop_components.size());
             auto addr = reinterpret_cast<uintptr_t>(arr->data) + (idx * inner_prop->ElementSize());
 
-            insert_property_component<T>(components, inner_prop, std::move(name), addr);
+            insert_property_component<T>(prop_components, inner_prop, std::move(name), addr);
         },
-        [&components, idx](UObject* obj) {
-            auto name = std::format("[{}]##arr_{}", idx, components.size());
-            insert_field_component<void>(components, obj, std::move(name));
+        [&prop_components, idx](UProperty* inner_prop) {
+            auto name = std::format("[{}]##arr_{}", idx, prop_components.size());
+            insert_property_component<void>(prop_components, inner_prop, std::move(name), 0);
         });
 }
 

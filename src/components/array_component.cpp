@@ -60,7 +60,7 @@ void ArrayComponent::draw(const ObjectWindowSettings& settings,
                                    this->components.end());
         } else if (current_count > old_count) {
             for (size_t i = old_count; i < current_count; i++) {
-                insert_component(this->components, this->addr, this->inner_prop, i);
+                insert_component_array(this->components, this->addr, this->inner_prop, i);
             }
         }
 
