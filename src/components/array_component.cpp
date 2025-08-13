@@ -17,12 +17,9 @@ ArrayComponent::ArrayComponent(std::string&& name,
                          std::string_view{this->name}.substr(0, this->length_before_hash),
                          std::string_view{this->name}.substr(this->length_before_hash))),
       addr(addr),
+      last_data(nullptr),
       inner_prop(inner_prop),
-      was_force_closed(false) {
-    for (size_t i = 0; i < this->addr->size(); i++) {
-        insert_component(this->components, this->addr, this->inner_prop, i);
-    }
-}
+      was_force_closed(false) {}
 
 void ArrayComponent::draw(const ObjectWindowSettings& settings,
                           ForceExpandTree expand_children,
@@ -46,14 +43,22 @@ void ArrayComponent::draw(const ObjectWindowSettings& settings,
     }
 
     if (ImGui::TreeNode(this->header.c_str())) {
-        // If open, make sure we have the right amount of components
-        // Components should be made to support their contents being changed out under them
-        // This means we just need to keep our component array the same size, we don't need to care
-        // about where exactly items were added/removed
+        // If the array data changed, we need to remove all components, since some may keep pointers
+        // to the now invalid data
+        if (this->addr->data != this->last_data) {
+            this->last_data = this->addr->data;
+            this->components.clear();
+            old_count = 0;
+        }
+
+        // If the count changed, add/remove components as needed
+        // In this case, as long as the data pointer is valid, all components should support their
+        // contents being swapped out from under them, so we don't need to care about where exactly
+        // was modified.
         if (current_count < old_count) {
             this->components.erase(this->components.begin() + (ptrdiff_t)current_count,
                                    this->components.end());
-        } else {
+        } else if (current_count > old_count) {
             for (size_t i = old_count; i < current_count; i++) {
                 insert_component(this->components, this->addr, this->inner_prop, i);
             }

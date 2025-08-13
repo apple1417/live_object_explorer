@@ -11,6 +11,7 @@ class ArrayComponent : public AbstractComponent {
    protected:
     std::string header;
     unrealsdk::unreal::TArray<void>* addr;
+    void* last_data;
     unrealsdk::unreal::UProperty* inner_prop;
     std::vector<std::unique_ptr<AbstractComponent>> components;
     bool was_force_closed;
