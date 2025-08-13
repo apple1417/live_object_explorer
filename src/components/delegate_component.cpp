@@ -51,4 +51,10 @@ void DelegateComponent::draw(const ObjectWindowSettings& /*settings*/,
     }
 }
 
+bool DelegateComponent::passes_filter(const ImGuiTextFilter& filter) {
+    return AbstractComponent::passes_filter(filter)
+           || filter.PassFilter(this->cached_func_name.c_str())
+           || filter.PassFilter(this->cached_obj_name.c_str());
+}
+
 }  // namespace live_object_explorer

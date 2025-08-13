@@ -34,6 +34,7 @@ class DelegateComponent : public AbstractComponent {
     void draw(const ObjectWindowSettings& settings,
               ForceExpandTree expand_children,
               bool show_all_children) override;
+    [[nodiscard]] bool passes_filter(const ImGuiTextFilter& filter) override;
 };
 
 }  // namespace live_object_explorer
