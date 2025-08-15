@@ -19,12 +19,12 @@ class ObjectComponent : public AbstractComponent {
     unrealsdk::unreal::UClass* property_class;
 
     /**
-     * @brief Checks if we're allowed to set this property to the given object
+     * @brief Tries to set this property to the given object;
      *
      * @param obj The object to check.
-     * @return True if allowed.
+     * @return True if setting was allowed/succeeded.
      */
-    virtual bool may_set_to_object(unrealsdk::unreal::UObject* obj) const;
+    virtual bool try_set_to_object(unrealsdk::unreal::UObject* obj) const;
 
    public:
     /**
@@ -45,11 +45,21 @@ class ObjectComponent : public AbstractComponent {
     [[nodiscard]] bool passes_filter(const ImGuiTextFilter& filter) override;
 };
 
+class InterfaceComponent : public ObjectComponent {
+   protected:
+    bool try_set_to_object(unrealsdk::unreal::UObject* obj) const override;
+
+   public:
+    using ObjectComponent::ObjectComponent;
+
+    ~InterfaceComponent() override = default;
+};
+
 class ClassComponent : public ObjectComponent {
    protected:
     unrealsdk::unreal::UClass* meta_class;
 
-    bool may_set_to_object(unrealsdk::unreal::UObject* obj) const override;
+    bool try_set_to_object(unrealsdk::unreal::UObject* obj) const override;
 
    public:
     /**

@@ -5,11 +5,13 @@
 #include "components/const_component.h"
 #include "components/delegate_component.h"
 #include "components/enum_component.h"
+#include "components/enum_field_component.h"
 #include "components/object_component.h"
 #include "components/object_field_component.h"
 #include "components/scalar_component.h"
 #include "components/str_component.h"
 #include "components/struct_component.h"
+#include "components/struct_field_component.h"
 
 using namespace unrealsdk::unreal;
 
@@ -167,7 +169,12 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
         std::make_unique<DoubleComponent>(std::move(name), reinterpret_cast<float64_t*>(addr)));
 }
 
-// UEnum
+template <>
+void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                            UEnum* field,
+                            std::string&& name) {
+    components.emplace_back(std::make_unique<EnumFieldComponent>(std::move(name), field));
+}
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
@@ -214,7 +221,12 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
         std::make_unique<FloatComponent>(std::move(name), reinterpret_cast<float32_t*>(addr)));
 }
 
-// UFunction
+template <>
+void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                            UFunction* field,
+                            std::string&& name) {
+    components.emplace_back(std::make_unique<StructFieldComponent>(std::move(name), field));
+}
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
@@ -252,7 +264,14 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
         std::make_unique<Int32Component>(std::move(name), reinterpret_cast<int32_t*>(addr)));
 }
 
-// UInterfaceProperty
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               UInterfaceProperty* prop,
+                               std::string&& name,
+                               uintptr_t addr) {
+    components.emplace_back(std::make_unique<InterfaceComponent>(
+        std::move(name), reinterpret_cast<UObject**>(addr), prop->InterfaceClass()));
+}
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
@@ -292,7 +311,13 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
     insert_property_component<void>(components, prop, std::move(name), addr);
 }
 
-// UScriptStruct
+template <>
+void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                            UScriptStruct* field,
+                            std::string&& name) {
+    components.emplace_back(std::make_unique<StructFieldComponent>(std::move(name), field));
+}
+
 // USoftClassProperty
 // USoftObjectProperty
 

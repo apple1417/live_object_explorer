@@ -16,8 +16,13 @@ ObjectComponent::ObjectComponent(std::string&& name, UObject** addr, UClass* pro
       cached_obj(0),
       property_class(property_class) {}
 
-bool ObjectComponent::may_set_to_object(UObject* obj) const {
-    return obj->Class()->is_instance(this->property_class);
+bool ObjectComponent::try_set_to_object(UObject* obj) const {
+    if (obj != nullptr && !obj->is_instance(this->property_class)) {
+        return false;
+    }
+
+    *reinterpret_cast<UObject**>(this->addr) = obj;
+    return true;
 }
 
 void ObjectComponent::draw(const ObjectWindowSettings& /*settings*/,
@@ -54,15 +59,48 @@ bool ObjectComponent::passes_filter(const ImGuiTextFilter& filter) {
            || filter.PassFilter(this->cached_obj_name.c_str());
 }
 
+namespace {
+
+struct FScriptInterface {
+    UObject* obj;     // A pointer to a UObject that implements a native interface.
+    void* iface_ptr;  // Pointer to the location of the interface object within the UObject
+                      // referenced by ObjectPointer.
+};
+
+}  // namespace
+
+bool InterfaceComponent::try_set_to_object(UObject* obj) const {
+    size_t pointer_offset = 0;
+    if (obj != nullptr) {
+        FImplementedInterface impl{};
+        if (!obj->is_implementation(this->property_class, &impl)) {
+            return false;
+        }
+        pointer_offset = impl.get_pointer_offset();
+    }
+
+    auto iface = reinterpret_cast<FScriptInterface*>(addr);
+    iface->obj = obj;
+    iface->iface_ptr = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(obj) + pointer_offset);
+    return true;
+}
+
 ClassComponent::ClassComponent(std::string&& name,
                                unrealsdk::unreal::UObject** addr,
                                unrealsdk::unreal::UClass* property_class,
                                unrealsdk::unreal::UClass* meta_class)
     : ObjectComponent(std::move(name), addr, property_class), meta_class(meta_class) {}
 
-bool ClassComponent::may_set_to_object(UObject* obj) const {
-    return ObjectComponent::may_set_to_object(obj)
-           && reinterpret_cast<UClass*>(obj)->inherits(this->meta_class);
+bool ClassComponent::try_set_to_object(UObject* obj) const {
+    if (obj != nullptr && !obj->is_instance(this->property_class)) {
+        return false;
+    }
+    if (obj != nullptr && !reinterpret_cast<UClass*>(obj)->inherits(this->meta_class)) {
+        return false;
+    }
+
+    *reinterpret_cast<UObject**>(this->addr) = obj;
+    return true;
 }
 
 }  // namespace live_object_explorer
