@@ -65,6 +65,7 @@
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
       },
+      "generator": "Ninja",
       "toolchainFile": "common_cmake/llvm-i686-w64-mingw32.cmake"
     },
     {
@@ -75,6 +76,7 @@
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
       },
+      "generator": "Ninja",
       "toolchainFile": "common_cmake/llvm-x86_64-w64-mingw32.cmake"
     },
     {
@@ -85,6 +87,7 @@
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
       },
+      "generator": "Ninja",
       "toolchainFile": "common_cmake/i686-w64-mingw32.cmake"
     },
     {
@@ -95,6 +98,7 @@
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
       },
+      "generator": "Ninja",
       "toolchainFile": "common_cmake/x86_64-w64-mingw32.cmake"
     },
     {

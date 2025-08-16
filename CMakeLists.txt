@@ -64,6 +64,14 @@ target_link_libraries(live_object_explorer PUBLIC
     dxgi.lib
 )
 
+if(MINGW)
+    # MinGW needs these specified explicitly?
+    target_link_libraries(live_object_explorer PUBLIC
+        dwmapi.lib
+        d3dcompiler.lib
+    )
+endif()
+
 install(
     TARGETS live_object_explorer
     RUNTIME DESTINATION .

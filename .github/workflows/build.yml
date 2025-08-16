@@ -1,0 +1,285 @@
+name: CI
+
+on:
+  push: {}
+  pull_request: {}
+  workflow_dispatch:
+    inputs:
+      new-release-tag:
+        description: >
+          New Release Tag. If given, creates a (draft) full release using the given tag, if empty,
+          updates the dev release.
+        type: string
+        required: false
+
+env:
+  # Limit which presets make artifacts
+  ALLOWED_ARTIFACT_PRESETS: "msvc-release;"
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        preset:
+        - clang-oak-release
+        - clang-willow-release
+        - msvc-oak-release
+        - msvc-willow-release
+
+    steps:
+    - name: Setup Clang
+      if: startswith(matrix.preset, 'clang')
+      uses: egor-tensin/setup-clang@v1
+
+    - name: Add MSVC to PATH
+      if: startswith(matrix.preset, 'msvc')
+      uses: TheMrMilchmann/setup-msvc-dev@v3
+      with:
+        arch: ${{ fromJSON('["x86", "x64"]')[contains(matrix.preset, 'oak')] }}
+
+    - name: Setup CMake and Ninja
+      uses: lukka/get-cmake@latest
+
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Build
+      run: |
+        cmake . --preset ${{ matrix.preset }}
+        cmake --build out/build/${{ matrix.preset }} --target install
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      if: inputs.new-release-tag == '' || contains(env.ALLOWED_ARTIFACT_PRESETS, matrix.preset)
+      with:
+        name: ${{ matrix.preset }}
+        path: out/install/${{ matrix.preset }}/live_object_explorer.dll
+
+  build-ubuntu:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain:
+          - preset: clang-cross-willow-release
+            container: clang-cross
+          - preset: clang-cross-oak-release
+            container: clang-cross
+          - preset: llvm-mingw-willow-release
+            container: llvm-mingw
+          - preset: llvm-mingw-oak-release
+            container: llvm-mingw
+          - preset: mingw-willow-release
+            container: mingw
+          - preset: mingw-oak-release
+            container: mingw
+
+    steps:
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build
+      uses: devcontainers/ci@v0.3
+      with:
+        # Just going to grab these from willow2, since I expect that'll be my most active repo
+        imageName: ghcr.io/apple1417/willow2-sdk-mods/${{ matrix.toolchain.container }}
+        cacheFrom: ghcr.io/apple1417/willow2-sdk-mods/${{ matrix.toolchain.container }}:latest
+        configFile: .devcontainer/${{ matrix.toolchain.container }}/devcontainer.json
+        push: never  # Don't want to deal with a personal access token so just don't push it
+        # The git watcher cmake thinks something's unsafe? Doesn't happen to me locally.
+        runCmd: |
+          git config --global --add safe.directory `pwd`
+          git config --global --add safe.directory `pwd`/libs/unrealsdk
+
+          set -e
+
+          cmake . --preset ${{ matrix.toolchain.preset }}
+          cmake --build out/build/${{ matrix.toolchain.preset }} --target install
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      if: >
+        inputs.new-release-tag == ''
+        || contains(env.ALLOWED_ARTIFACT_PRESETS, matrix.toolchain.preset)
+      with:
+        name: ${{ matrix.toolchain.preset }}
+        path: out/install/${{ matrix.toolchain.preset }}/live_object_explorer.dll
+
+# ==============================================================================
+
+  clang-tidy:
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        preset:
+        - clang-oak-release
+        - clang-willow-release
+
+    steps:
+    - name: Setup Clang
+      if: startswith(matrix.preset, 'clang')
+      uses: egor-tensin/setup-clang@v1
+
+    - name: Setup CMake and Ninja
+      uses: lukka/get-cmake@latest
+
+    # Needed for clang tidy to enable `-export-fixes`
+    - name: Install pyyaml
+      run: pip install pyyaml
+
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Configure CMake
+      run: cmake . --preset ${{ matrix.preset }} -DCMAKE_DISABLE_PRECOMPILE_HEADERS=On
+
+    - name: Remove `.modmap`s from compile commands
+      run: |
+        (Get-Content "out\build\${{ matrix.preset }}\compile_commands.json")    `
+          -replace "@CMakeFiles.+?\.modmap", ""                                 `
+        | Set-Content                                                           `
+          -Path "out\build\${{ matrix.preset }}\compile_commands.json"
+
+    - name: Run clang-tidy
+      run: |
+        python (Get-Command run-clang-tidy).Source                              `
+          -p "out\build\${{ matrix.preset }}"                                   `
+          -export-fixes clang-tidy-fixes.yml                                    `
+          $([Regex]::Escape("$pwd\src") + ".+\.(c|cpp|h|hpp)$")
+
+    - name: Process clang-tidy warnings
+      uses: asarium/clang-tidy-action@v1
+      with:
+        fixesFile: clang-tidy-fixes.yml
+
+  clang-format:
+    runs-on: windows-latest
+
+    steps:
+    - name: Setup Clang
+      uses: egor-tensin/setup-clang@v1
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Run clang-format
+      run: |
+        clang-format                                                            `
+          -n -Werror                                                            `
+          $(Get-ChildItem                                                       `
+              src                                                               `
+              -File                                                             `
+              -Recurse                                                          `
+              -Include ("*.c", "*.cpp", "*.h", "*.hpp")                         `
+            | % FullName)
+
+  spelling:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Check spelling
+      uses: crate-ci/typos@master
+
+# ==============================================================================
+
+  release-dev-ci:
+    runs-on: ubuntu-latest
+    if: >
+      github.ref == 'refs/heads/master'
+      && github.repository == 'apple1417/live_object_explorer'
+      && inputs.new-release-tag == ''
+
+    needs:
+      - build-ubuntu
+      - build-windows
+      - clang-tidy
+      - clang-format
+      - spelling
+
+    permissions:
+      contents: write
+
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+
+    - name: Re-zip artifacts
+      run: |
+        find . -mindepth 1 -maxdepth 1 -type d | xargs -I{} -- bash -c "cd {}; zip -r '../{}.zip' ."
+
+    - name: Upload releases
+      uses: andelf/nightly-release@main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: nightly
+        files: "*.zip"
+        name: Automated Development Release
+        prerelease: true
+        body: >
+          This release is automatically built from the latest passing commits on master - it might
+          break things. Only use this if you know what you're doing.
+
+  release-draft-full:
+    runs-on: ubuntu-latest
+    if: >
+      github.ref == 'refs/heads/master'
+      && github.repository == 'apple1417/live_object_explorer'
+      && inputs.new-release-tag != ''
+
+    needs:
+      - build-ubuntu
+      - build-windows
+      - clang-tidy
+      - clang-format
+      - spelling
+
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+
+    - name: Re-zip artifacts
+      run: |
+        find . -mindepth 1 -maxdepth 1 -type d | xargs -I{} -- bash -c "cd {}; zip -r '../{}.zip' ."
+
+    - name: Create new release tag
+      uses: rickstaa/action-create-tag@v1
+      with:
+        tag: ${{ inputs.new-release-tag }}
+
+    - name: Upload releases
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ inputs.new-release-tag }}
+        files: "*.zip"
+        fail_on_unmatched_files: true
+        draft: true
+        generate_release_notes: true
