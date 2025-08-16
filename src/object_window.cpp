@@ -2,8 +2,7 @@
 #include "object_window.h"
 #include "component_picker.h"
 #include "components/abstract.h"
-#include "components/object_component.h"
-#include "components/scalar_component.h"
+#include "native_section.h"
 
 using namespace unrealsdk::unreal;
 
@@ -40,7 +39,9 @@ ObjectWindow::ObjectWindow(UObject* obj)
                              reinterpret_cast<uintptr_t>(obj));
         }
     }
-    this->append_native_section(obj);
+
+    this->prop_sections.emplace_back("Native", decltype(ClassSection::components){});
+    insert_all_native_components(this->prop_sections.back().components, obj);
 }
 
 const std::string& ObjectWindow::get_id() const {
@@ -118,30 +119,6 @@ void ObjectWindow::draw() {
     draw_sections(this->field_sections);
 
     this->settings.filter_active_last_time = filter_active;
-}
-
-void ObjectWindow::append_native_section(UObject* obj) {
-    auto section_name = std::format("Native##section_{}", this->prop_sections.size());
-    this->prop_sections.emplace_back(section_name, decltype(ClassSection::components){});
-    auto& components = this->prop_sections.back().components;
-
-    components.emplace_back(
-        // Read off the real type of object flags, since it changes
-        std::make_unique<ScalarComponent<std::remove_reference_t<decltype(obj->ObjectFlags())>>>(
-            "ObjectFlags", &obj->ObjectFlags()));
-    components.emplace_back(
-        std::make_unique<Int32Component>("InternalIndex", &obj->InternalIndex()));
-
-    // TODO: proper class component
-    components.emplace_back(std::make_unique<ObjectComponent>(
-        "Class", reinterpret_cast<UObject**>(&obj->Class()), find_class<UClass>()));
-
-    // TODO: Name
-    components.emplace_back(
-        std::make_unique<ObjectComponent>("Outer", &obj->Outer(), find_class<UObject>()));
-
-    // TODO: other classes
-    // TODO: gaps?
 }
 
 }  // namespace live_object_explorer

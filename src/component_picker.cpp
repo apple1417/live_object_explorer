@@ -446,7 +446,7 @@ void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& prop_comp
                       std::vector<std::unique_ptr<AbstractComponent>>& field_components,
                       UObject* obj,
                       uintptr_t base_addr) {
-    cast(
+    cast<cast_options<>::with_input<true>>(
         obj,
         [&prop_components, &field_components, base_addr]<typename T>(T* obj) {
             if constexpr (std::is_base_of_v<UProperty, T>) {
@@ -490,7 +490,7 @@ void insert_component_array(std::vector<std::unique_ptr<AbstractComponent>>& pro
                             unrealsdk::unreal::TArray<void>* arr,
                             unrealsdk::unreal::UProperty* inner_prop,
                             size_t idx) {
-    cast(
+    cast<cast_options<>::with_input<true>>(
         inner_prop,
         [&prop_components, arr, idx]<typename T>(T* inner_prop) {
             // Index alone is probably unique, but some components assume the hash exists, so might

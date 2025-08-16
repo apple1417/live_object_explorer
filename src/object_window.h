@@ -58,13 +58,6 @@ class ObjectWindow {
     std::vector<ClassSection> field_sections;
 
     ObjectWindowSettings settings = {};
-
-    /**
-     * @brief Adds the section for native properties to the end of the list.
-     *
-     * @param obj The object being initalized.
-     */
-    void append_native_section(unrealsdk::unreal::UObject* obj);
 };
 
 }  // namespace live_object_explorer
