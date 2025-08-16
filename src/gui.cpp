@@ -21,6 +21,7 @@ size_t selected_search_idx = 0;
 ImGuiTextFilter search_filter;
 
 void do_search(void) {
+    search_filter.Clear();
     search_results.clear();
     selected_search_idx = 0;
 
@@ -133,18 +134,8 @@ std::list<ObjectWindow> object_windows{};
  */
 void dock_latest_obj_window(const std::string& /* parent_window_id */) {
     // TODO
-#if 0
-    auto node_id = ImGui::GetID((parent_window_id + "_dock").c_str());
-
-    if (ImGui::DockBuilderGetNode(node_id) == nullptr) {
-        ImGui::DockBuilderAddNode(node_id);
-        ImGui::DockBuilderSetNodePos(node_id, ImVec2(100, 100));
-        ImGui::DockBuilderSetNodeSize(node_id, ImVec2(100, 100));
-    }
-    ImGui::DockBuilderDockWindow(object_windows.back().get_id().c_str(), node_id);
-    ImGui::DockBuilderFinish(node_id);
-#endif
 }
+
 }  // namespace
 
 void open_object_window(UObject* obj) {
