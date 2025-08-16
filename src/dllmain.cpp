@@ -2,7 +2,6 @@
 #include "gui.h"
 #include "injected_imgui/auto.h"
 #include "theme.h"
-#include "unrealsdk/utils.h"
 
 namespace live_object_explorer {
 
@@ -49,7 +48,7 @@ DWORD WINAPI startup_thread(LPVOID /*unused*/) {
         theme::init(*api);
 
         ImGui_ImplWin32_EnableDpiAwareness();
-        float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(
+        const float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(
             ::MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY));
 
         IMGUI_CHECKVERSION();

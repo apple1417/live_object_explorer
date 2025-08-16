@@ -18,6 +18,8 @@
 #include <dxgi1_4.h>
 
 #ifdef __cplusplus
+#include <list>
+
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_dx12.h>

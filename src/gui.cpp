@@ -78,7 +78,7 @@ void draw_search_window(void) {
 
         ImGui::SetNextItemWidth(-rhs_width);
         if (ImGui::InputText(
-                "##search_bar", &search_query[0], IM_ARRAYSIZE(search_query),
+                "##search_bar", &search_query[0], (sizeof(search_query) / sizeof(search_query[0])),
                 ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
             do_search();
         }
@@ -94,8 +94,8 @@ void draw_search_window(void) {
                     continue;
                 }
 
-                bool is_selected = selected_search_idx == i;
-                bool still_loaded = (bool)ptr;
+                const bool is_selected = selected_search_idx == i;
+                const bool still_loaded = (bool)ptr;
 
                 if (ImGui::Selectable(name.c_str(), is_selected,
                                       still_loaded ? 0 : ImGuiSelectableFlags_Disabled)) {

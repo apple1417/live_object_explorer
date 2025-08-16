@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "theme.h"
 
-#include <algorithm>
 #include "imgui.h"
 #include "injected_imgui/auto.h"
 
@@ -39,6 +38,7 @@ void apply(void) {
     }
 
     if (apply_amd_dx12_hack) {
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-bounds-array-to-pointer-decay)
         for (auto& colour : ImGui::GetStyle().Colors) {
             if (colour.w == 1.F) {
                 // NOLINTNEXTLINE(readability-magic-numbers)

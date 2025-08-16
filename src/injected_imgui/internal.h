@@ -29,6 +29,30 @@ struct RaiiLambda {
 };
 
 /**
+ * @brief Wrapper around GetProcAddress to cast to the relevant type.
+ *
+ * @tparam F The function type being retrieved, use decltype.
+ * @param module The module to look in.
+ * @param name The name of the function to get.
+ * @return A pointer to the function.
+ */
+template <typename F>
+F* get_proc_address(HMODULE module, LPCSTR name) {
+    FARPROC addr = ::GetProcAddress(module, name);
+
+#ifdef __MINGW32__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
+
+    return reinterpret_cast<F*>(addr);
+
+#ifdef __MINGW32__
+#pragma GCC diagnostic pop
+#endif
+}
+
+/**
  * @brief Initializes the win32 imgui backend for the given window.
  *
  * @param h_wnd Handle to the window to hook.

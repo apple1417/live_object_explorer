@@ -17,7 +17,6 @@
 #include "components/struct_field_component.h"
 #include "components/text_component.h"
 #include "components/weak_obj_component.h"
-#include "unrealsdk/unreal/classes/properties/utextproperty.h"
 
 using namespace unrealsdk::unreal;
 

@@ -2,7 +2,6 @@
 #include "components/delegate_component.h"
 #include "components/abstract.h"
 #include "gui.h"
-#include "imgui.h"
 
 namespace live_object_explorer {
 

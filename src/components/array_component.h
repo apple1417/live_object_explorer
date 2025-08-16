@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "components/abstract.h"
-#include "unrealsdk/unreal/structs/tarray.h"
 
 namespace live_object_explorer {
 

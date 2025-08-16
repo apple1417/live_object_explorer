@@ -70,7 +70,7 @@ void ObjectWindow::draw() {
 
     auto content_region = ImGui::GetContentRegionAvail();
     // NOLINTBEGIN(readability-magic-numbers)
-    float width =
+    const float width =
         -(content_region.x - std::min(ImGui::GetFontSize() * 20.0F, content_region.x * 0.5F));
     // NOLINTEND(readability-magic-numbers)
 

@@ -9,8 +9,7 @@ namespace live_object_explorer {
 
 namespace {
 
-using property_flags_type =
-    std::remove_reference_t<decltype(((unrealsdk::unreal::UProperty*)nullptr)->PropertyFlags())>;
+using property_flags_type = unrealsdk::unreal::UProperty::property_flags_type;
 
 /**
  * @brief Appends function flags to the given property name.
@@ -23,18 +22,18 @@ void append_function_flags(std::string& name, property_flags_type flags) {
         return;
     }
 
-    bool is_return = (flags & UProperty::PROP_FLAG_RETURN) != 0;
-    bool is_out = (flags & UProperty::PROP_FLAG_OUT) != 0;
+    const bool is_return = (flags & UProperty::PROP_FLAG_RETURN) != 0;
+    const bool is_out = (flags & UProperty::PROP_FLAG_OUT) != 0;
 #if UNREALSDK_FLAVOUR == UNREALSDK_FLAVOUR_WILLOW
-    bool is_optional = (flags & UProperty::PROP_FLAG_OPTIONAL) != 0;
+    const bool is_optional = (flags & UProperty::PROP_FLAG_OPTIONAL) != 0;
 #else
-    bool is_optional = false;
+    const bool is_optional = false;
 #endif
 
     if (is_return || is_out || is_optional) {
         // Hacky magic just to not bother with a string stream
         // NOLINTNEXTLINE(readability-magic-numbers)
-        size_t length = 1 + (is_return ? 8 : 0) + (is_out ? 5 : 0) + (is_optional ? 10 : 0);
+        const size_t length = 1 + (is_return ? 8 : 0) + (is_out ? 5 : 0) + (is_optional ? 10 : 0);
         name.reserve(name.size() + length);
 
         name += " (";

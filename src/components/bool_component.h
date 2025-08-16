@@ -8,8 +8,7 @@ namespace live_object_explorer {
 
 class BoolComponent : public AbstractComponent {
    public:
-    using field_mask_type = std::remove_reference_t<
-        decltype(((unrealsdk::unreal::UBoolProperty*)nullptr)->FieldMask())>;
+    using field_mask_type = unrealsdk::unreal::UBoolProperty::field_mask_type;
 
    protected:
     field_mask_type* addr;

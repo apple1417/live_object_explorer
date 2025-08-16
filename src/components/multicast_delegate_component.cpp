@@ -2,7 +2,6 @@
 #include "components/multicast_delegate_component.h"
 #include "components/delegate_component.h"
 #include "object_window.h"
-#include "unrealsdk/unreal/structs/fscriptdelegate.h"
 
 using namespace unrealsdk::unreal;
 

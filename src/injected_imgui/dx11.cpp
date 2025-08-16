@@ -236,8 +236,8 @@ bool hook(void) {
     }
 
     auto d3d11_create_device_and_swap_chain =
-        reinterpret_cast<decltype(D3D11CreateDeviceAndSwapChain)*>(
-            GetProcAddress(d3d11_module, "D3D11CreateDeviceAndSwapChain"));
+        get_proc_address<decltype(D3D11CreateDeviceAndSwapChain)>(d3d11_module,
+                                                                  "D3D11CreateDeviceAndSwapChain");
     if (d3d11_create_device_and_swap_chain == nullptr) {
         LOG(ERROR, "DX11 hook initialization failed: Couldn't find D3D11CreateDeviceAndSwapChain");
         return false;

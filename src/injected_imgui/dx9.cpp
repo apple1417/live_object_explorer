@@ -137,8 +137,7 @@ bool hook(void) {
         return false;
     }
 
-    auto d3d9_create = reinterpret_cast<decltype(Direct3DCreate9)*>(
-        GetProcAddress(d3d9_module, "Direct3DCreate9"));
+    auto d3d9_create = get_proc_address<decltype(Direct3DCreate9)>(d3d9_module, "Direct3DCreate9");
     if (d3d9_create == nullptr) {
         LOG(ERROR, "DX9 hook initialization failed: Couldn't find Direct3DCreate9");
         return false;
@@ -162,13 +161,13 @@ bool hook(void) {
         .BackBufferFormat = D3DFMT_UNKNOWN,
         .BackBufferCount = 0,
         .MultiSampleType = D3DMULTISAMPLE_NONE,
-        .MultiSampleQuality = NULL,
+        .MultiSampleQuality = 0,
         .SwapEffect = D3DSWAPEFFECT_DISCARD,
         .hDeviceWindow = window,
         .Windowed = 1,
         .EnableAutoDepthStencil = 0,
         .AutoDepthStencilFormat = D3DFMT_UNKNOWN,
-        .Flags = NULL,
+        .Flags = 0,
         .FullScreen_RefreshRateInHz = 0,
         .PresentationInterval = 0,
     };

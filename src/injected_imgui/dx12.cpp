@@ -94,8 +94,9 @@ bool ensure_initialized(IDXGISwapChain3* swap_chain) {
     }
 
     {
-        D3D12_DESCRIPTOR_HEAP_DESC srv_desc = {D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, buffer_count,
-                                               D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 0};
+        const D3D12_DESCRIPTOR_HEAP_DESC srv_desc = {D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+                                                     buffer_count,
+                                                     D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 0};
 
         if (auto ret =
                 dx::device->CreateDescriptorHeap(&srv_desc, IID_ID3D12DescriptorHeap,
@@ -117,8 +118,8 @@ bool ensure_initialized(IDXGISwapChain3* swap_chain) {
     }
 
     {
-        D3D12_DESCRIPTOR_HEAP_DESC rtv_desc = {D3D12_DESCRIPTOR_HEAP_TYPE_RTV, buffer_count,
-                                               D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 1};
+        const D3D12_DESCRIPTOR_HEAP_DESC rtv_desc = {D3D12_DESCRIPTOR_HEAP_TYPE_RTV, buffer_count,
+                                                     D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 1};
 
         if (auto ret =
                 dx::device->CreateDescriptorHeap(&rtv_desc, IID_ID3D12DescriptorHeap,
@@ -129,7 +130,7 @@ bool ensure_initialized(IDXGISwapChain3* swap_chain) {
             return false;
         }
 
-        size_t rtv_descriptor_size =
+        const size_t rtv_descriptor_size =
             dx::device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
         D3D12_CPU_DESCRIPTOR_HANDLE rtv_handle =
             dx::rtv_desc_desc->GetCPUDescriptorHandleForHeapStart();
@@ -157,8 +158,8 @@ bool ensure_initialized(IDXGISwapChain3* swap_chain) {
                                D3D12_COMMAND_LIST_TYPE_DIRECT, IID_ID3D12CommandAllocator,
                                reinterpret_cast<void**>(&frame_ctx.command_allocator))
                            != S_OK) {
-                LOG(ERROR, "DX12 hook initialization failed: Couldn't create command allocator ({})",
-                    ret);
+                LOG(ERROR,
+                    "DX12 hook initialization failed: Couldn't create command allocator ({})", ret);
                 return false;
             }
         }
@@ -184,7 +185,7 @@ bool ensure_initialized(IDXGISwapChain3* swap_chain) {
     init_info.SrvDescriptorAllocFn = [](ImGui_ImplDX12_InitInfo*,
                                         D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_handle,
                                         D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_handle) {
-        size_t idx = dx::heap_free_indexes.back();
+        const size_t idx = dx::heap_free_indexes.back();
         dx::heap_free_indexes.pop_back();
         out_cpu_handle->ptr = dx::heap_start_cpu.ptr + (idx * dx::heap_increment);
         out_gpu_handle->ptr = dx::heap_start_gpu.ptr + (idx * dx::heap_increment);
@@ -396,8 +397,8 @@ bool hook(void) {
         return false;
     }
 
-    auto d3d12_create_device = reinterpret_cast<decltype(D3D12CreateDevice)*>(
-        GetProcAddress(d3d12_module, "D3D12CreateDevice"));
+    auto d3d12_create_device =
+        get_proc_address<decltype(D3D12CreateDevice)>(d3d12_module, "D3D12CreateDevice");
     if (d3d12_create_device == nullptr) {
         LOG(ERROR, "DX12 hook initialization failed: Couldn't find D3D12CreateDevice");
         return false;
