@@ -29,7 +29,7 @@ struct RaiiLambda {
 };
 
 /**
- * @brief Initalizes the win32 imgui backend for the given window.
+ * @brief Initializes the win32 imgui backend for the given window.
  *
  * @param h_wnd Handle to the window to hook.
  * @return True if hooked successfully.

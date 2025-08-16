@@ -73,7 +73,7 @@ void draw_search_window(void) {
     if (ImGui::Begin("Live Object Explorer", &search_window_open)) {
         auto text_size = ImGui::CalcTextSize("Search");
         auto rhs_width = text_size.x + (2 * ImGui::GetStyle().ItemSpacing.x);
-        // Assume the filter box heigh is the same as the general text height
+        // Assume the filter box height is the same as the general text height
         auto filter_height = text_size.y + (3 * ImGui::GetStyle().FramePadding.y) + 1;
 
         ImGui::SetNextItemWidth(-rhs_width);

@@ -7,7 +7,7 @@
 namespace live_object_explorer::theme {
 
 /**
- * @brief Initalizes the themes module.
+ * @brief Initializes the themes module.
  *
  * @param api Which graphics api was used to hook imgui.
  */

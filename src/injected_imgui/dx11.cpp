@@ -14,20 +14,20 @@ ID3D11DeviceContext* context{};
 ID3D11Device* device{};
 ID3D11RenderTargetView* main_render_view = nullptr;
 
-bool initalized = false;
+bool initialized = false;
 
 /**
  * @brief Creates the main render view.
  *
  * @param swap_chain The in use swap chain.
- * @return True if the render view was successfull created.
+ * @return True if the render view was successful created.
  */
 bool create_main_render_view(IDXGISwapChain* swap_chain) {
     ID3D11Texture2D* back_buffer{};
     if (auto ret =
             swap_chain->GetBuffer(0, IID_ID3D11Texture2D, reinterpret_cast<void**>(&back_buffer))
             != S_OK) {
-        LOG(ERROR, "DX11 hook initalization failed: Couldn't get texture buffer ({})", ret);
+        LOG(ERROR, "DX11 hook initialization failed: Couldn't get texture buffer ({})", ret);
         return false;
     }
     const RaiiLambda raii{[&back_buffer]() {
@@ -39,7 +39,7 @@ bool create_main_render_view(IDXGISwapChain* swap_chain) {
 
     if (auto ret =
             device->CreateRenderTargetView(back_buffer, nullptr, &main_render_view) != S_OK) {
-        LOG(ERROR, "DX11 hook initalization failed: Couldn't create render target ({})", ret);
+        LOG(ERROR, "DX11 hook initialization failed: Couldn't create render target ({})", ret);
         return false;
     }
 
@@ -47,28 +47,28 @@ bool create_main_render_view(IDXGISwapChain* swap_chain) {
 }
 
 /**
- * @brief Initalizes the dx11 hook if it isn't already.
+ * @brief Initializes the dx11 hook if it isn't already.
  *
  * @param swap_chain The in use swap chain.
- * @return True if the hook was successfully initalized, false otherwise.
+ * @return True if the hook was successfully initialized, false otherwise.
  */
-bool ensure_initalized(IDXGISwapChain* swap_chain) {
+bool ensure_initialized(IDXGISwapChain* swap_chain) {
     static bool run_once = false;
     if (run_once) {
-        return initalized;
+        return initialized;
     }
     run_once = true;
 
     DXGI_SWAP_CHAIN_DESC desc;
     auto ret = swap_chain->GetDesc(&desc);
     if (ret != S_OK) {
-        LOG(ERROR, "DX11 hook initalization failed: Couldn't get swap chain descriptor ({})", ret);
+        LOG(ERROR, "DX11 hook initialization failed: Couldn't get swap chain descriptor ({})", ret);
         return false;
     }
 
     ret = swap_chain->GetDevice(IID_ID3D11Device, reinterpret_cast<void**>(&device));
     if (ret != S_OK) {
-        LOG(ERROR, "DX11 hook initalization failed: Couldn't get device ({})", ret);
+        LOG(ERROR, "DX11 hook initialization failed: Couldn't get device ({})", ret);
         return false;
     }
 
@@ -84,11 +84,11 @@ bool ensure_initalized(IDXGISwapChain* swap_chain) {
         return false;
     }
     if (!ImGui_ImplDX11_Init(device, context)) {
-        LOG(ERROR, "DX11 hook initalization failed: ImGui DX11 init failed");
+        LOG(ERROR, "DX11 hook initialization failed: ImGui DX11 init failed");
         return false;
     }
 
-    initalized = true;
+    initialized = true;
     return true;
 }
 
@@ -119,7 +119,7 @@ HRESULT INJECTED_IMGUI_STDCALL swap_chain_present_hook(IDXGISwapChain* self,
         nested_call_guard = true;
         const RaiiLambda raii{[]() { nested_call_guard = false; }};
 
-        if (ensure_initalized(self)) {
+        if (ensure_initialized(self)) {
             ImGui_ImplDX11_NewFrame();
             ImGui_ImplWin32_NewFrame();
             ImGui::NewFrame();
@@ -133,9 +133,9 @@ HRESULT INJECTED_IMGUI_STDCALL swap_chain_present_hook(IDXGISwapChain* self,
             ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
         }
     } catch (const std::exception& ex) {
-        LOG(ERROR, "Exception occured during DX11 render loop: {}", ex.what());
+        LOG(ERROR, "Exception occurred during DX11 render loop: {}", ex.what());
     } catch (...) {
-        LOG(ERROR, "Unknown exception occured during DX11 render loop");
+        LOG(ERROR, "Unknown exception occurred during DX11 render loop");
     }
 
     return original_swap_chain_present(self, sync_interval, flags);
@@ -166,7 +166,7 @@ HRESULT INJECTED_IMGUI_STDCALL swap_chain_resize_buffers_hook(IDXGISwapChain* se
                                                               UINT height,
                                                               DXGI_FORMAT new_format,
                                                               UINT swap_chain_flags) {
-    if (initalized) {
+    if (initialized) {
         if (main_render_view != nullptr) {
             context->OMSetRenderTargets(0, nullptr, nullptr);
             main_render_view->Release();
@@ -178,7 +178,7 @@ HRESULT INJECTED_IMGUI_STDCALL swap_chain_resize_buffers_hook(IDXGISwapChain* se
     auto ret = original_swap_chain_resize_buffers(self, buffer_count, width, height, new_format,
                                                   swap_chain_flags);
 
-    if (initalized) {
+    if (initialized) {
         create_main_render_view(self);
         context->OMSetRenderTargets(1, &main_render_view, nullptr);
 
@@ -231,7 +231,7 @@ bool hook(void) {
 
     HMODULE d3d11_module = GetModuleHandleA("d3d11.dll");
     if (d3d11_module == nullptr) {
-        LOG(ERROR, "DX11 hook initalization failed: Couldn't find d3d11.dll");
+        LOG(ERROR, "DX11 hook initialization failed: Couldn't find d3d11.dll");
         return false;
     }
 
@@ -239,7 +239,7 @@ bool hook(void) {
         reinterpret_cast<decltype(D3D11CreateDeviceAndSwapChain)*>(
             GetProcAddress(d3d11_module, "D3D11CreateDeviceAndSwapChain"));
     if (d3d11_create_device_and_swap_chain == nullptr) {
-        LOG(ERROR, "DX11 hook initalization failed: Couldn't find D3D11CreateDeviceAndSwapChain");
+        LOG(ERROR, "DX11 hook initialization failed: Couldn't find D3D11CreateDeviceAndSwapChain");
         return false;
     }
 
@@ -273,7 +273,7 @@ bool hook(void) {
             sizeof(feature_levels) / sizeof(feature_levels[0]), D3D11_SDK_VERSION, &swap_chain_desc,
             &swap_chain, nullptr, nullptr, nullptr)
         != S_OK) {
-        LOG(ERROR, "DX11 hook initalization failed: Couldn't create swap chain");
+        LOG(ERROR, "DX11 hook initialization failed: Couldn't create swap chain");
         return false;
     }
     const RaiiLambda raii3{[&swap_chain]() {

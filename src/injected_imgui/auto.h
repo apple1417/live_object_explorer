@@ -20,7 +20,7 @@ std::optional<Api> auto_detect_api(void);
 
 /**
  * @brief Injects imgui into the current process.
- * @note This may be passed an api explictly, if you want to detect and hook in two steps.
+ * @note This may be passed an api explicitly, if you want to detect and hook in two steps.
  *
  * @param api Which graphics api to inject under.
  * @return True if hooked successfully.

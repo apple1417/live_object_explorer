@@ -19,7 +19,7 @@ void render(void);
  * @brief Opens a new object window.
  *
  * @param obj The object shown in the window.
- * @param parent_window The id of the parent window to initally dock this to. Defaults to the first
+ * @param parent_window The id of the parent window to initially dock this to. Defaults to the first
  *                      open object window when not given.
  */
 void open_object_window(unrealsdk::unreal::UObject* obj);

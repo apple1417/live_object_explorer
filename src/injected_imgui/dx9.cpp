@@ -10,24 +10,24 @@ namespace injected_imgui::dx9 {
 
 namespace {
 
-bool initalized = false;
+bool initialized = false;
 
 /**
- * @brief Initalizes the dx9 hook if it isn't already.
+ * @brief Initializes the dx9 hook if it isn't already.
  *
  * @param device The in use d3d9 device.
- * @return True if the hook was successfully initalized, false otherwise.
+ * @return True if the hook was successfully initialized, false otherwise.
  */
-bool ensure_initalized(IDirect3DDevice9* device) {
+bool ensure_initialized(IDirect3DDevice9* device) {
     static bool run_once = false;
     if (run_once) {
-        return initalized;
+        return initialized;
     }
     run_once = true;
 
     IDirect3DSwapChain9* swap_chain = nullptr;
     if (auto ret = device->GetSwapChain(0, &swap_chain) != D3D_OK) {
-        LOG(ERROR, "DX9 hook initalization failed: Failed to get swap chain ({})", ret);
+        LOG(ERROR, "DX9 hook initialization failed: Failed to get swap chain ({})", ret);
         return false;
     }
     const RaiiLambda raii{[&swap_chain]() {
@@ -39,7 +39,7 @@ bool ensure_initalized(IDirect3DDevice9* device) {
 
     D3DPRESENT_PARAMETERS params;
     if (auto ret = swap_chain->GetPresentParameters(&params) != D3D_OK) {
-        LOG(ERROR, "DX9 hook initalization failed: failed to get preset params ({})", ret);
+        LOG(ERROR, "DX9 hook initialization failed: failed to get preset params ({})", ret);
         return false;
     }
 
@@ -48,11 +48,11 @@ bool ensure_initalized(IDirect3DDevice9* device) {
     }
 
     if (!ImGui_ImplDX9_Init(device)) {
-        LOG(ERROR, "DX9 hook initalization failed: ImGui dx9 init failed");
+        LOG(ERROR, "DX9 hook initialization failed: ImGui dx9 init failed");
         return false;
     }
 
-    initalized = true;
+    initialized = true;
     return true;
 }
 
@@ -79,7 +79,7 @@ HRESULT INJECTED_IMGUI_STDCALL device_end_scene_hook(IDirect3DDevice9* self) {
         nested_call_guard = true;
         const RaiiLambda raii{[]() { nested_call_guard = false; }};
 
-        if (ensure_initalized(self)) {
+        if (ensure_initialized(self)) {
             ImGui_ImplDX9_NewFrame();
             ImGui_ImplWin32_NewFrame();
             ImGui::NewFrame();
@@ -91,9 +91,9 @@ HRESULT INJECTED_IMGUI_STDCALL device_end_scene_hook(IDirect3DDevice9* self) {
             ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
         }
     } catch (const std::exception& ex) {
-        LOG(ERROR, "Exception occured during DX9 render loop: {}", ex.what());
+        LOG(ERROR, "Exception occurred during DX9 render loop: {}", ex.what());
     } catch (...) {
-        LOG(ERROR, "Unknown exception occured during DX9 render loop");
+        LOG(ERROR, "Unknown exception occurred during DX9 render loop");
     }
 
     return original_device_end_scene(self);
@@ -133,20 +133,20 @@ bool hook(void) {
 
     HMODULE d3d9_module = GetModuleHandleA("d3d9.dll");
     if (d3d9_module == nullptr) {
-        LOG(ERROR, "DX9 hook initalization failed: Couldn't find d3d9.dll");
+        LOG(ERROR, "DX9 hook initialization failed: Couldn't find d3d9.dll");
         return false;
     }
 
     auto d3d9_create = reinterpret_cast<decltype(Direct3DCreate9)*>(
         GetProcAddress(d3d9_module, "Direct3DCreate9"));
     if (d3d9_create == nullptr) {
-        LOG(ERROR, "DX9 hook initalization failed: Couldn't find Direct3DCreate9");
+        LOG(ERROR, "DX9 hook initialization failed: Couldn't find Direct3DCreate9");
         return false;
     }
 
     IDirect3D9* d3d = d3d9_create(D3D_SDK_VERSION);
     if (d3d == nullptr) {
-        LOG(ERROR, "DX9 hook initalization failed: Couldn't create d3d object");
+        LOG(ERROR, "DX9 hook initialization failed: Couldn't create d3d object");
         return false;
     }
     const RaiiLambda raii3{[&d3d]() {
@@ -179,7 +179,7 @@ bool hook(void) {
                        D3DCREATE_SOFTWARE_VERTEXPROCESSING | D3DCREATE_DISABLE_DRIVER_MANAGEMENT,
                        &params, &device)
                    != D3D_OK) {
-        LOG(ERROR, "DX9 hook initalization failed: couldn't create d3d9 device ({})", ret);
+        LOG(ERROR, "DX9 hook initialization failed: couldn't create d3d9 device ({})", ret);
         return false;
     }
     const RaiiLambda raii4{[&device]() {

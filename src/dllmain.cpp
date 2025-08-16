@@ -74,9 +74,9 @@ DWORD WINAPI startup_thread(LPVOID /*unused*/) {
 #endif
 
     } catch (const std::exception& ex) {
-        LOG(ERROR, "Exception occured during live object explorer initalization: {}", ex.what());
+        LOG(ERROR, "Exception occurred during live object explorer initialization: {}", ex.what());
     } catch (...) {
-        LOG(ERROR, "Unknown exception occured during live object explorer initalization");
+        LOG(ERROR, "Unknown exception occurred during live object explorer initialization");
     }
 
     return 1;

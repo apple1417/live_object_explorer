@@ -62,7 +62,7 @@ LRESULT window_proc_hook(HWND h_wnd, UINT u_msg, WPARAM w_param, LPARAM l_param)
 
 bool init_win32_backend(HWND h_wnd) {
     if (!ImGui_ImplWin32_Init(h_wnd)) {
-        LOG(ERROR, "Win32 hook initalization failed: ImGui win32 init failed");
+        LOG(ERROR, "Win32 hook initialization failed: ImGui win32 init failed");
         return false;
     }
 
@@ -70,7 +70,7 @@ bool init_win32_backend(HWND h_wnd) {
         SetWindowLongPtrA(h_wnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(window_proc_hook)));
 
     if (window_proc_ptr == nullptr) {
-        LOG(ERROR, "Win32 hook initalization failed: Failed to replace winproc");
+        LOG(ERROR, "Win32 hook initialization failed: Failed to replace winproc");
         return false;
     }
 

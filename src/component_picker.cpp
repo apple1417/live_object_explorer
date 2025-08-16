@@ -477,7 +477,7 @@ void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& prop_comp
             if (obj->is_instance(find_class<UProperty>())) {
                 auto name = std::format("{}##comp_{}", obj->Name(), prop_components.size());
 
-                // Use void to explictly get the fallback. Address is ignored for this one.
+                // Use void to explicitly get the fallback. Address is ignored for this one.
                 insert_property_component<void>(prop_components, obj, std::move(name), 0);
             } else {
                 auto name = std::format("{}##comp_{}", obj->Name(), field_components.size());

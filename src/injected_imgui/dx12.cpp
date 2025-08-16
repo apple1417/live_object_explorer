@@ -10,7 +10,7 @@ namespace injected_imgui::dx12 {
 
 namespace {
 
-bool initalized = false;
+bool initialized = false;
 
 namespace dx {
 
@@ -52,15 +52,15 @@ void create_render_resources(IDXGISwapChain* swap_chain) {
 }
 
 /**
- * @brief Initalizes the dx12 hook if it isn't already.
+ * @brief Initializes the dx12 hook if it isn't already.
  *
  * @param swap_chain The in use swap chain.
- * @return True if the hook has been successfully initalized.
+ * @return True if the hook has been successfully initialized.
  */
-bool ensure_initalized(IDXGISwapChain3* swap_chain) {
+bool ensure_initialized(IDXGISwapChain3* swap_chain) {
     static bool run_once = false;
     if (run_once) {
-        return initalized;
+        return initialized;
     }
     run_once = true;
 
@@ -69,7 +69,7 @@ bool ensure_initalized(IDXGISwapChain3* swap_chain) {
 
     if (auto ret = swap_chain->GetDevice(IID_ID3D12Device, reinterpret_cast<void**>(&dx::device))
                    != S_OK) {
-        LOG(ERROR, "DX12 hook initalization failed: Couldn't get device ({})", ret);
+        LOG(ERROR, "DX12 hook initialization failed: Couldn't get device ({})", ret);
         return false;
     }
 
@@ -78,7 +78,7 @@ bool ensure_initalized(IDXGISwapChain3* swap_chain) {
     {
         DXGI_SWAP_CHAIN_DESC desc;
         if (auto ret = swap_chain->GetDesc(&desc) != S_OK) {
-            LOG(ERROR, "DX12 hook initalization failed: Couldn't get swap chain descriptor ({})",
+            LOG(ERROR, "DX12 hook initialization failed: Couldn't get swap chain descriptor ({})",
                 ret);
             return false;
         }
@@ -101,7 +101,7 @@ bool ensure_initalized(IDXGISwapChain3* swap_chain) {
                 dx::device->CreateDescriptorHeap(&srv_desc, IID_ID3D12DescriptorHeap,
                                                  reinterpret_cast<void**>(&dx::srv_desc_heap))
                 != S_OK) {
-            LOG(ERROR, "DX12 hook initalization failed: Couldn't get srv heap descriptor ({})",
+            LOG(ERROR, "DX12 hook initialization failed: Couldn't get srv heap descriptor ({})",
                 ret);
             return false;
         }
@@ -124,7 +124,7 @@ bool ensure_initalized(IDXGISwapChain3* swap_chain) {
                 dx::device->CreateDescriptorHeap(&rtv_desc, IID_ID3D12DescriptorHeap,
                                                  reinterpret_cast<void**>(&dx::rtv_desc_desc))
                 != S_OK) {
-            LOG(ERROR, "DX12 hook initalization failed: Couldn't get srv heap descriptor ({})",
+            LOG(ERROR, "DX12 hook initialization failed: Couldn't get srv heap descriptor ({})",
                 ret);
             return false;
         }
@@ -147,7 +147,7 @@ bool ensure_initalized(IDXGISwapChain3* swap_chain) {
                                                           IID_ID3D12CommandAllocator,
                                                           reinterpret_cast<void**>(&allocator))
                        != S_OK) {
-            LOG(ERROR, "DX12 hook initalization failed: Couldn't get command allocator ({})", ret);
+            LOG(ERROR, "DX12 hook initialization failed: Couldn't get command allocator ({})", ret);
             return false;
         }
 
@@ -157,7 +157,7 @@ bool ensure_initalized(IDXGISwapChain3* swap_chain) {
                                D3D12_COMMAND_LIST_TYPE_DIRECT, IID_ID3D12CommandAllocator,
                                reinterpret_cast<void**>(&frame_ctx.command_allocator))
                            != S_OK) {
-                LOG(ERROR, "DX12 hook initalization failed: Couldn't create command allocator ({})",
+                LOG(ERROR, "DX12 hook initialization failed: Couldn't create command allocator ({})",
                     ret);
                 return false;
             }
@@ -169,7 +169,7 @@ bool ensure_initalized(IDXGISwapChain3* swap_chain) {
                                                  IID_ID3D12GraphicsCommandList,
                                                  reinterpret_cast<void**>(&dx::command_list))
                    != S_OK) {
-        LOG(ERROR, "DX12 hook initalization failed: Couldn't create command list ({})", ret);
+        LOG(ERROR, "DX12 hook initialization failed: Couldn't create command list ({})", ret);
         return false;
     }
 
@@ -202,7 +202,7 @@ bool ensure_initalized(IDXGISwapChain3* swap_chain) {
 
     ImGui_ImplDX12_Init(&init_info);
 
-    initalized = true;
+    initialized = true;
     return true;
 }
 
@@ -215,7 +215,7 @@ namespace {
 // NOLINTNEXTLINE(modernize-use-using)
 typedef void(INJECTED_IMGUI_STDCALL* cmd_queue_exec_func)(ID3D12CommandQueue* self,
                                                           UINT num_command_lists,
-                                                          ID3D12CommandList* const* commmand_lists);
+                                                          ID3D12CommandList* const* command_lists);
 cmd_queue_exec_func original_cmd_queue_exec;
 
 const constexpr auto CMD_QUEUE_EXEC_VF_IDX = 10;
@@ -226,12 +226,12 @@ const constexpr std::string_view CMD_QUEUE_EXEC_NAME = "ID3D12CommandQueue::Exec
  */
 void INJECTED_IMGUI_STDCALL cmd_queue_exec_hook(ID3D12CommandQueue* self,
                                                 UINT num_command_lists,
-                                                ID3D12CommandList* const* commmand_lists) {
+                                                ID3D12CommandList* const* command_lists) {
     if (dx::command_queue == nullptr && self->GetDesc().Type == D3D12_COMMAND_LIST_TYPE_DIRECT) {
         dx::command_queue = self;
     }
 
-    original_cmd_queue_exec(self, num_command_lists, commmand_lists);
+    original_cmd_queue_exec(self, num_command_lists, command_lists);
 }
 
 }  // namespace
@@ -261,7 +261,7 @@ HRESULT INJECTED_IMGUI_STDCALL swap_chain_present_hook(IDXGISwapChain3* self,
         nested_call_guard = true;
         const RaiiLambda raii{[]() { nested_call_guard = false; }};
 
-        if (dx::command_queue != nullptr && ensure_initalized(self)) {
+        if (dx::command_queue != nullptr && ensure_initialized(self)) {
             ImGui_ImplDX12_NewFrame();
             ImGui_ImplWin32_NewFrame();
             ImGui::NewFrame();
@@ -304,9 +304,9 @@ HRESULT INJECTED_IMGUI_STDCALL swap_chain_present_hook(IDXGISwapChain3* self,
                 1, reinterpret_cast<ID3D12CommandList**>(&dx::command_list));
         }
     } catch (const std::exception& ex) {
-        LOG(ERROR, "Exception occured during DX12 render loop: {}", ex.what());
+        LOG(ERROR, "Exception occurred during DX12 render loop: {}", ex.what());
     } catch (...) {
-        LOG(ERROR, "Unknown exception occured during DX12 render loop");
+        LOG(ERROR, "Unknown exception occurred during DX12 render loop");
     }
 
     return original_swap_chain_present(self, sync_interval, flags);
@@ -337,7 +337,7 @@ HRESULT INJECTED_IMGUI_STDCALL swap_chain_resize_buffers_hook(IDXGISwapChain* se
                                                               UINT height,
                                                               DXGI_FORMAT new_format,
                                                               UINT swap_chain_flags) {
-    if (initalized) {
+    if (initialized) {
         for (auto& frame : dx::framebuffers) {
             frame.main_render_target_resource->Release();
             frame.main_render_target_resource = nullptr;
@@ -349,7 +349,7 @@ HRESULT INJECTED_IMGUI_STDCALL swap_chain_resize_buffers_hook(IDXGISwapChain* se
     auto ret = original_swap_chain_resize_buffers(self, buffer_count, width, height, new_format,
                                                   swap_chain_flags);
 
-    if (initalized) {
+    if (initialized) {
         create_render_resources(self);
     }
 
@@ -392,14 +392,14 @@ bool hook(void) {
 
     HMODULE d3d12_module = GetModuleHandleA("d3d12.dll");
     if (d3d12_module == nullptr) {
-        LOG(ERROR, "DX12 hook initalization failed: Couldn't find d3d12.dll");
+        LOG(ERROR, "DX12 hook initialization failed: Couldn't find d3d12.dll");
         return false;
     }
 
     auto d3d12_create_device = reinterpret_cast<decltype(D3D12CreateDevice)*>(
         GetProcAddress(d3d12_module, "D3D12CreateDevice"));
     if (d3d12_create_device == nullptr) {
-        LOG(ERROR, "DX12 hook initalization failed: Couldn't find D3D12CreateDevice");
+        LOG(ERROR, "DX12 hook initialization failed: Couldn't find D3D12CreateDevice");
         return false;
     }
 
@@ -407,7 +407,7 @@ bool hook(void) {
     if (auto ret = d3d12_create_device(nullptr, D3D_FEATURE_LEVEL_12_0, IID_ID3D12Device,
                                        reinterpret_cast<void**>(&hook_device))
                    != S_OK) {
-        LOG(ERROR, "DX12 hook initalization failed: couldn't create d3d12 device ({})", ret);
+        LOG(ERROR, "DX12 hook initialization failed: couldn't create d3d12 device ({})", ret);
         return false;
     }
     const RaiiLambda raii3{[&hook_device]() {
@@ -428,7 +428,7 @@ bool hook(void) {
     if (auto ret = hook_device->CreateCommandQueue(&queue_desc, IID_ID3D12CommandQueue,
                                                    reinterpret_cast<void**>(&hook_command_queue))
                    != S_OK) {
-        LOG(ERROR, "DX12 hook initalization failed: Couldn't create d3d12 device ({})", ret);
+        LOG(ERROR, "DX12 hook initialization failed: Couldn't create d3d12 device ({})", ret);
         return false;
     }
     const RaiiLambda raii4{[&hook_command_queue]() {
@@ -441,7 +441,7 @@ bool hook(void) {
     IDXGIFactory1* factory = nullptr;
     if (auto ret =
             CreateDXGIFactory1(IID_IDXGIFactory1, reinterpret_cast<void**>(&factory)) != S_OK) {
-        LOG(ERROR, "DX12 hook initalization failed: Failed to create dxgi factory ({})", ret);
+        LOG(ERROR, "DX12 hook initialization failed: Failed to create dxgi factory ({})", ret);
         return false;
     }
     const RaiiLambda raii5{[&factory]() {
@@ -483,7 +483,7 @@ bool hook(void) {
     IDXGISwapChain* swap_chain = nullptr;
     if (auto ret =
             factory->CreateSwapChain(hook_command_queue, &swap_chain_desc, &swap_chain) != S_OK) {
-        LOG(ERROR, "DX12 hook initalization failed: Failed to create swap chain ({})", ret);
+        LOG(ERROR, "DX12 hook initialization failed: Failed to create swap chain ({})", ret);
         return false;
     }
     const RaiiLambda raii6{[&swap_chain]() {
