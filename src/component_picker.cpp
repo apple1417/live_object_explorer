@@ -8,6 +8,7 @@
 #include "components/enum_field_component.h"
 #include "components/object_component.h"
 #include "components/object_field_component.h"
+#include "components/persistent_obj_ptr_component.h"
 #include "components/scalar_component.h"
 #include "components/str_component.h"
 #include "components/struct_component.h"
@@ -282,7 +283,15 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
         std::make_unique<Int32Component>(std::move(name), reinterpret_cast<int32_t*>(addr)));
 }
 
-// ULazyObjectProperty
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               ULazyObjectProperty* prop,
+                               std::string&& name,
+                               uintptr_t addr) {
+    components.emplace_back(std::make_unique<LazyObjectComponent>(
+        std::move(name), reinterpret_cast<FLazyObjectPtr*>(addr), prop->PropertyClass()));
+}
+
 // UMulticastDelegateProperty
 // UNameProperty
 
@@ -318,8 +327,24 @@ void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& com
     components.emplace_back(std::make_unique<StructFieldComponent>(std::move(name), field));
 }
 
-// USoftClassProperty
-// USoftObjectProperty
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               USoftClassProperty* prop,
+                               std::string&& name,
+                               uintptr_t addr) {
+    components.emplace_back(std::make_unique<SoftClassComponent>(
+        std::move(name), reinterpret_cast<FSoftObjectPtr*>(addr), prop->PropertyClass(),
+        prop->MetaClass()));
+}
+
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               USoftObjectProperty* prop,
+                               std::string&& name,
+                               uintptr_t addr) {
+    components.emplace_back(std::make_unique<SoftObjectComponent>(
+        std::move(name), reinterpret_cast<FSoftObjectPtr*>(addr), prop->PropertyClass()));
+}
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
