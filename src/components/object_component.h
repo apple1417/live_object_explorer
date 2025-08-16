@@ -7,10 +7,11 @@
 namespace live_object_explorer {
 
 class ObjectComponent : public AbstractComponent {
-   protected:
+   public:
     // NOLINTNEXTLINE(readability-redundant-string-init)
     static const constexpr std::string_view NULL_OBJECT_NAME = "None";
 
+   protected:
     std::string hashless_name;
     std::string cached_obj_name;
     uintptr_t* addr;

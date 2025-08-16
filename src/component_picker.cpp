@@ -6,6 +6,8 @@
 #include "components/delegate_component.h"
 #include "components/enum_component.h"
 #include "components/enum_field_component.h"
+#include "components/multicast_delegate_component.h"
+#include "components/name_component.h"
 #include "components/object_component.h"
 #include "components/object_field_component.h"
 #include "components/persistent_obj_ptr_component.h"
@@ -13,6 +15,9 @@
 #include "components/str_component.h"
 #include "components/struct_component.h"
 #include "components/struct_field_component.h"
+#include "components/text_component.h"
+#include "components/weak_obj_component.h"
+#include "unrealsdk/unreal/classes/properties/utextproperty.h"
 
 using namespace unrealsdk::unreal;
 
@@ -292,8 +297,23 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
         std::move(name), reinterpret_cast<FLazyObjectPtr*>(addr), prop->PropertyClass()));
 }
 
-// UMulticastDelegateProperty
-// UNameProperty
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               UMulticastDelegateProperty* prop,
+                               std::string&& name,
+                               uintptr_t addr) {
+    components.emplace_back(std::make_unique<MulticastDelegateComponent>(
+        std::move(name), reinterpret_cast<TArray<FScriptDelegate>*>(addr), prop->Signature()));
+}
+
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               UNameProperty* /*prop*/,
+                               std::string&& name,
+                               uintptr_t addr) {
+    components.emplace_back(
+        std::make_unique<NameComponent>(std::move(name), reinterpret_cast<FName*>(addr)));
+}
 
 template <>
 void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
@@ -371,7 +391,14 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
         std::make_unique<StructComponent>(std::move(name), addr, prop->Struct()));
 }
 
-// UTextProperty
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               UTextProperty* /*prop*/,
+                               std::string&& name,
+                               uintptr_t addr) {
+    components.emplace_back(
+        std::make_unique<TextComponent>(std::move(name), reinterpret_cast<FText*>(addr)));
+}
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
@@ -400,7 +427,14 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
         std::make_unique<UInt64Component>(std::move(name), reinterpret_cast<uint64_t*>(addr)));
 }
 
-// UWeakObjectProperty
+template <>
+void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                               UWeakObjectProperty* prop,
+                               std::string&& name,
+                               uintptr_t addr) {
+    components.emplace_back(std::make_unique<WeakObjectComponent>(
+        std::move(name), reinterpret_cast<FWeakObjectPtr*>(addr), prop->PropertyClass()));
+}
 
 #ifdef __clang__
 #pragma clang diagnostic pop
