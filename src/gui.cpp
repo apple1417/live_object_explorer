@@ -158,7 +158,9 @@ void render(void) {
         return;
     }
 
+#ifndef NDEBUG
     ImGui::ShowDemoWindow();
+#endif
 
     draw_search_window();
 
