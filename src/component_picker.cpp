@@ -15,7 +15,6 @@
 #include "components/str_component.h"
 #include "components/struct_component.h"
 #include "components/struct_field_component.h"
-#include "components/text_component.h"
 #include "components/weak_obj_component.h"
 
 using namespace unrealsdk::unreal;
