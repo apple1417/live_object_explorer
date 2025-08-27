@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "components/abstract.h"
+#include "gui/object.h"
 
 namespace live_object_explorer {
 
@@ -12,11 +13,11 @@ class DelegateComponent : public AbstractComponent {
     unrealsdk::unreal::UFunction* signature;
 
     unrealsdk::unreal::FName last_func_name{0, 0};
-    unrealsdk::unreal::UObject* last_obj = nullptr;
 
     std::string hashless_name;
     std::string cached_func_name;
-    std::string cached_obj_name;
+
+    gui::CachedObjLink cached_obj;
 
    public:
     /**

@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "components/struct_field_component.h"
-#include "gui/gui.h"
+#include "gui/object.h"
 #include "object_window.h"
 
 using namespace unrealsdk::unreal;
@@ -86,24 +86,12 @@ void StructFieldComponent::draw(const ObjectWindowSettings& /*settings*/,
 
     if (ImGui::TreeNode(this->name.c_str(), "%s %s", this->is_function ? "Function" : "Struct",
                         this->hashless_name.c_str())) {
-        if (this->ptr) {
-            if (ImGui::TextLink(this->cached_obj_name.c_str())) {
-                gui::open_object_window(*this->ptr, this->name);
-            }
-        } else {
-            ImGui::TextDisabled("%s", this->cached_obj_name.c_str());
-        }
+        gui::object_link(this->cached_obj_name, *this->ptr, this->name);
 
         for (const auto& prop_info : this->properties) {
             ImGui::BulletText("%s:", prop_info.name.c_str());
             ImGui::SameLine();
-            if (prop_info.link) {
-                if (ImGui::TextLink(prop_info.type.c_str())) {
-                    gui::open_object_window(*prop_info.link, this->name);
-                }
-            } else {
-                ImGui::Text("%s", prop_info.type.c_str());
-            }
+            gui::object_link(prop_info.type, *prop_info.link, this->name);
         }
 
         ImGui::TreePop();

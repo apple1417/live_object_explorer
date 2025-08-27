@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "components/persistent_obj_ptr_component.h"
 #include "gui/gui.h"
+#include "gui/object.h"
 #include "object_window.h"
 
 using namespace unrealsdk::unreal;
@@ -15,7 +16,8 @@ SoftObjectComponent::PersistentObjectPtrComponent(std::string&& name,
       hashless_name(this->name.substr(0, this->length_before_hash)),
       addr(addr),
       property_class(property_class),
-      identifier(addr->identifier.asset_path_name) {
+      identifier(addr->identifier.asset_path_name),
+      cached_obj(std::string_view{this->name}.substr(this->length_before_hash)) {
     auto subpath_size = addr->identifier.subpath.size();
     if (subpath_size > 0) {
         identifier.reserve(identifier.size() + subpath_size + 1);
@@ -36,7 +38,8 @@ LazyObjectComponent::PersistentObjectPtrComponent(std::string&& name,
                              addr->identifier.guid_a,
                              addr->identifier.guid_b,
                              addr->identifier.guid_c,
-                             addr->identifier.guid_d)) {}
+                             addr->identifier.guid_d)),
+      cached_obj(std::string_view{this->name}.substr(this->length_before_hash)) {}
 
 SoftClassComponent::SoftClassComponent(std::string&& name,
                                        FSoftObjectPtr* addr,

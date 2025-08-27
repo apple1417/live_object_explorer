@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "components/abstract.h"
-#include "gui/gui.h"
+#include "gui/object.h"
 
 namespace live_object_explorer {
 
@@ -15,8 +15,7 @@ class PersistentObjectPtrComponent : public AbstractComponent {
     unrealsdk::unreal::UClass* property_class;
 
     std::string identifier;
-    std::string cached_obj_name;
-    uintptr_t cached_obj = 0;
+    gui::CachedObjLink cached_obj;
 
     /**
      * @brief Tries to set this property to the given object;
@@ -51,31 +50,15 @@ class PersistentObjectPtrComponent : public AbstractComponent {
               ForceExpandTree /*expand_children*/,
               bool /*show_all_children*/) override {
         auto current_obj = unrealsdk::gobjects().get_weak_object(&this->addr->weak_ptr);
-        if (this->cached_obj != reinterpret_cast<uintptr_t>(current_obj)) {
-            this->cached_obj = reinterpret_cast<uintptr_t>(current_obj);
-            if (current_obj != nullptr) {
-                this->cached_obj_name =
-                    std::format("{}'{}'{}", current_obj->Class()->Name(),
-                                unrealsdk::utils::narrow(current_obj->get_path_name()),
-                                std::string_view{this->name}.substr(this->length_before_hash));
-            }
-        }
 
         // TODO: editable
         ImGui::Text("%s:", this->hashless_name.c_str());
         ImGui::SameLine();
-        if (current_obj == nullptr) {
-            ImGui::TextDisabled("%s", this->identifier.c_str());
-        } else {
-            if (ImGui::TextLink(this->cached_obj_name.c_str())) {
-                gui::open_object_window(current_obj, this->name);
-            }
-        }
+        this->cached_obj.draw(current_obj, this->name);
     }
 
     [[nodiscard]] bool passes_filter(const ImGuiTextFilter& filter) override {
-        return AbstractComponent::passes_filter(filter)
-               || filter.PassFilter(this->cached_obj_name.c_str())
+        return AbstractComponent::passes_filter(filter) || this->cached_obj.passes_filter(filter)
                || filter.PassFilter(this->identifier.c_str());
     }
 };

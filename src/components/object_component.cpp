@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "components/object_component.h"
 #include "components/abstract.h"
-#include "gui/gui.h"
+#include "gui/object.h"
 #include "object_window.h"
 
 using namespace unrealsdk::unreal;
@@ -11,10 +11,9 @@ namespace live_object_explorer {
 ObjectComponent::ObjectComponent(std::string&& name, UObject** addr, UClass* property_class)
     : AbstractComponent(std::move(name)),
       hashless_name(this->name.substr(0, this->length_before_hash)),
-      cached_obj_name(NULL_OBJECT_NAME),
-      addr(reinterpret_cast<uintptr_t*>(addr)),
-      cached_obj(0),
-      property_class(property_class) {}
+      addr(addr),
+      property_class(property_class),
+      cached_obj(std::string_view{this->name}.substr(this->length_before_hash)) {}
 
 bool ObjectComponent::try_set_to_object(UObject* obj) const {
     if (obj != nullptr && !obj->is_instance(this->property_class)) {
@@ -29,34 +28,15 @@ void ObjectComponent::draw(const ObjectWindowSettings& /*settings*/,
                            ForceExpandTree /*expand_children*/,
                            bool /*show_all_children*/) {
     auto current_obj = *this->addr;
-    if (this->cached_obj != current_obj) {
-        this->cached_obj_name =
-            current_obj == 0
-                ? NULL_OBJECT_NAME
-                : this->cached_obj_name = std::format(
-                      "{}'{}'{}", reinterpret_cast<UObject*>(current_obj)->Class()->Name(),
-                      unrealsdk::utils::narrow(
-                          reinterpret_cast<UObject*>(current_obj)->get_path_name()),
-                      std::string_view{this->name}.substr(this->length_before_hash));
-
-        this->cached_obj = current_obj;
-    }
 
     // TODO: editable
     ImGui::Text("%s:", this->hashless_name.c_str());
     ImGui::SameLine();
-    if (this->cached_obj == 0) {
-        ImGui::TextDisabled("%s", this->cached_obj_name.c_str());
-    } else {
-        if (ImGui::TextLink(this->cached_obj_name.c_str())) {
-            gui::open_object_window(reinterpret_cast<UObject*>(this->cached_obj), this->name);
-        }
-    }
+    this->cached_obj.draw(current_obj, this->name);
 }
 
 bool ObjectComponent::passes_filter(const ImGuiTextFilter& filter) {
-    return AbstractComponent::passes_filter(filter)
-           || filter.PassFilter(this->cached_obj_name.c_str());
+    return AbstractComponent::passes_filter(filter) || this->cached_obj.passes_filter(filter);
 }
 
 namespace {

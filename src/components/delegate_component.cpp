@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "components/delegate_component.h"
 #include "components/abstract.h"
-#include "gui/gui.h"
+#include "gui/object.h"
 
 namespace live_object_explorer {
 
@@ -11,21 +11,14 @@ DelegateComponent::DelegateComponent(std::string&& name,
     : AbstractComponent(std::move(name)),
       addr(addr),
       signature(signature),
-      hashless_name(this->name.substr(0, this->length_before_hash)) {}
+      hashless_name(this->name.substr(0, this->length_before_hash)),
+      cached_obj(std::string_view{this->name}.substr(this->length_before_hash)) {}
 
 void DelegateComponent::draw(const ObjectWindowSettings& /*settings*/,
                              ForceExpandTree /*expand_children*/,
                              bool /*show_all_children*/) {
-    auto obj = this->addr->get_object();
-    if (obj != this->last_obj) {
-        this->last_obj = obj;
-        this->cached_obj_name =
-            obj == nullptr ? ""
-                           : this->cached_obj_name = std::format(
-                                 "{}'{}'{}", obj->Class()->Name(),
-                                 unrealsdk::utils::narrow(obj->get_path_name()),
-                                 std::string_view{this->name}.substr(this->length_before_hash));
-    }
+    auto current_obj = this->addr->get_object();
+
     if (this->addr->func_name != this->last_func_name) {
         this->last_func_name = this->addr->func_name;
         this->cached_func_name =
@@ -35,25 +28,23 @@ void DelegateComponent::draw(const ObjectWindowSettings& /*settings*/,
 
     ImGui::Text("%s:", this->hashless_name.c_str());
     ImGui::SameLine();
-    if (obj == nullptr) {
+    if (current_obj == nullptr) {
         ImGui::TextDisabled("None");
     } else {
-        if (ImGui::TextLink(this->cached_func_name.c_str())) {
-            gui::open_object_window(obj->Class()->find(this->last_func_name), this->name);
-        }
+        gui::object_link(
+            this->last_func_name,
+            [&]() { return current_obj->Class()->find(this->last_func_name); }, this->name);
         ImGui::SameLine();
         ImGui::Text("on");
         ImGui::SameLine();
-        if (ImGui::TextLink(this->cached_obj_name.c_str())) {
-            gui::open_object_window(obj, this->name);
-        }
+        this->cached_obj.draw(current_obj, this->name);
     }
 }
 
 bool DelegateComponent::passes_filter(const ImGuiTextFilter& filter) {
     return AbstractComponent::passes_filter(filter)
            || filter.PassFilter(this->cached_func_name.c_str())
-           || filter.PassFilter(this->cached_obj_name.c_str());
+           || this->cached_obj.passes_filter(filter);
 }
 
 }  // namespace live_object_explorer

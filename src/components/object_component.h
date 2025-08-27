@@ -3,21 +3,17 @@
 
 #include "pch.h"
 #include "components/abstract.h"
+#include "gui/object.h"
 
 namespace live_object_explorer {
 
 class ObjectComponent : public AbstractComponent {
-   public:
-    // NOLINTNEXTLINE(readability-redundant-string-init)
-    static const constexpr std::string_view NULL_OBJECT_NAME = "None";
-
    protected:
     std::string hashless_name;
-    std::string cached_obj_name;
-    uintptr_t* addr;
-    uintptr_t cached_obj;
-
+    unrealsdk::unreal::UObject** addr;
     unrealsdk::unreal::UClass* property_class;
+
+    gui::CachedObjLink cached_obj;
 
     /**
      * @brief Tries to set this property to the given object;

@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "components/enum_field_component.h"
-#include "gui/gui.h"
+#include "gui/object.h"
 #include "object_window.h"
 
 using namespace unrealsdk::unreal;
@@ -26,13 +26,7 @@ void EnumFieldComponent::draw(const ObjectWindowSettings& settings,
     }
 
     if (ImGui::TreeNode(this->name.c_str(), "Enum %s", this->hashless_name.c_str())) {
-        if (this->ptr) {
-            if (ImGui::TextLink(this->cached_obj_name.c_str())) {
-                gui::open_object_window(*this->ptr, this->name);
-            }
-        } else {
-            ImGui::TextDisabled("%s", this->cached_obj_name.c_str());
-        }
+        gui::object_link(this->cached_obj_name, *this->ptr, this->name);
 
         for (const auto& info : this->name_info) {
             ImGui::BulletText("%s", settings.hex ? info.hex.c_str() : info.decimal.c_str());
