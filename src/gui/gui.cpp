@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "gui.h"
+#include "gui/gui.h"
 #include "components/abstract.h"
 #include "object_window.h"
 

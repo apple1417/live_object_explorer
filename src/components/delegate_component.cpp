@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "components/delegate_component.h"
 #include "components/abstract.h"
-#include "gui.h"
+#include "gui/gui.h"
 
 namespace live_object_explorer {
 

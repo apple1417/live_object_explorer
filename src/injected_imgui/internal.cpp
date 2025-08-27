@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "injected_imgui/internal.h"
 
-#include "gui.h"
+#include "gui/gui.h"
 
 namespace injected_imgui::internal {
 

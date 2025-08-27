@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "components/struct_field_component.h"
-#include "gui.h"
+#include "gui/gui.h"
 #include "object_window.h"
 
 using namespace unrealsdk::unreal;
