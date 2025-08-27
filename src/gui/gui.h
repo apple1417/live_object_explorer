@@ -11,6 +11,13 @@ namespace live_object_explorer::gui {
 void show(void);
 
 /**
+ * @brief Checks if any part of the gui is open.
+ *
+ * @return True if it's open.
+ */
+bool is_open(void);
+
+/**
  * @brief Renders the gui.
  */
 void render(void);

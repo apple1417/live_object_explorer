@@ -153,8 +153,12 @@ void show(void) {
     search_window_open = true;
 }
 
+bool is_open(void) {
+    return search_window_open || !object_windows.empty();
+}
+
 void render(void) {
-    if (!search_window_open && object_windows.empty()) {
+    if (!is_open()) {
         return;
     }
 

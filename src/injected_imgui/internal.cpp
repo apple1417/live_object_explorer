@@ -13,6 +13,10 @@ WNDPROC window_proc_ptr{};
  * @brief `WinProc` hook, used to pass input to imgui.
  */
 LRESULT window_proc_hook(HWND h_wnd, UINT u_msg, WPARAM w_param, LPARAM l_param) {
+    if (!live_object_explorer::gui::is_open()) {
+        return CallWindowProcA(window_proc_ptr, h_wnd, u_msg, w_param, l_param);
+    }
+
     bool capture_mouse = false;
     bool capture_kb = false;
 
