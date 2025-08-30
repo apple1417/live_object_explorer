@@ -147,7 +147,7 @@ void CachedObjLink::draw_editable(unrealsdk::unreal::UObject* obj,
                                    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::TextUnformatted(this->failed_to_set_msg.c_str());
 
-            if (ImGui::Button("Close")) {
+            if (ImGui::Button("Close") || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
                 open = false;
                 ImGui::CloseCurrentPopup();
             }
@@ -171,9 +171,7 @@ void CachedObjLink::fail_to_set(std::string&& msg) {
         this->editable_name = this->name;
     }
 
-    ImGui::PushID(this);
     ImGui::OpenPopup("Failed to set object");
-    ImGui::PopID();
 }
 
 bool CachedObjLink::passes_filter(const ImGuiTextFilter& filter) {

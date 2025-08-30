@@ -65,6 +65,7 @@ struct CachedObjLink {
 
     /**
      * @brief Shows a popup window explaining why a setter failed.
+     * @note Must only be called from inside the setter.
      * @note The popup is only drawn by draw_editable.
      *
      * @param msg The reason for failure.
