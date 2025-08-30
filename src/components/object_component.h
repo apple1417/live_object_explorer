@@ -18,10 +18,9 @@ class ObjectComponent : public AbstractComponent {
     /**
      * @brief Tries to set this property to the given object;
      *
-     * @param obj The object to check.
-     * @return True if setting was allowed/succeeded.
+     * @param obj The object to try set.
      */
-    virtual bool try_set_to_object(unrealsdk::unreal::UObject* obj) const;
+    virtual void try_set_to_object(unrealsdk::unreal::UObject* obj);
 
    public:
     /**
@@ -44,7 +43,7 @@ class ObjectComponent : public AbstractComponent {
 
 class InterfaceComponent : public ObjectComponent {
    protected:
-    bool try_set_to_object(unrealsdk::unreal::UObject* obj) const override;
+    void try_set_to_object(unrealsdk::unreal::UObject* obj) override;
 
    public:
     using ObjectComponent::ObjectComponent;
@@ -56,7 +55,7 @@ class ClassComponent : public ObjectComponent {
    protected:
     unrealsdk::unreal::UClass* meta_class;
 
-    bool try_set_to_object(unrealsdk::unreal::UObject* obj) const override;
+    void try_set_to_object(unrealsdk::unreal::UObject* obj) override;
 
    public:
     /**

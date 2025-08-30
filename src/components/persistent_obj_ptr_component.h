@@ -20,17 +20,20 @@ class PersistentObjectPtrComponent : public AbstractComponent {
     /**
      * @brief Tries to set this property to the given object;
      *
-     * @param obj The object to check.
-     * @return True if setting was allowed/succeeded.
+     * @param obj The object to try set.
      */
-    virtual bool try_set_to_object(unrealsdk::unreal::UObject* obj) const {
+    virtual void try_set_to_object(unrealsdk::unreal::UObject* obj) {
         if (obj != nullptr && !obj->is_instance(this->property_class)) {
-            return false;
+            return;
         }
 
         unrealsdk::gobjects().set_weak_object(&this->addr->weak_ptr, obj);
-        return true;
     }
+
+    void try_set_to_object_impl(unrealsdk::unreal::UObject* obj);
+    void draw_impl(const ObjectWindowSettings& /*settings*/,
+                   ForceExpandTree /*expand_children*/,
+                   bool /*show_all_children*/);
 
    public:
     /**
@@ -48,14 +51,7 @@ class PersistentObjectPtrComponent : public AbstractComponent {
 
     void draw(const ObjectWindowSettings& /*settings*/,
               ForceExpandTree /*expand_children*/,
-              bool /*show_all_children*/) override {
-        auto current_obj = unrealsdk::gobjects().get_weak_object(&this->addr->weak_ptr);
-
-        // TODO: editable
-        ImGui::Text("%s:", this->hashless_name.c_str());
-        ImGui::SameLine();
-        this->cached_obj.draw(current_obj, this->name);
-    }
+              bool /*show_all_children*/) override;
 
     [[nodiscard]] bool passes_filter(const ImGuiTextFilter& filter) override {
         return AbstractComponent::passes_filter(filter) || this->cached_obj.passes_filter(filter)
@@ -67,6 +63,15 @@ using SoftObjectComponent = PersistentObjectPtrComponent<unrealsdk::unreal::FSof
 using LazyObjectComponent = PersistentObjectPtrComponent<unrealsdk::unreal::FLazyObjectPtr>;
 
 template <>
+void SoftObjectComponent::draw(const ObjectWindowSettings& settings,
+                               ForceExpandTree expand_children,
+                               bool show_all_children);
+template <>
+void LazyObjectComponent::draw(const ObjectWindowSettings& settings,
+                               ForceExpandTree expand_children,
+                               bool show_all_children);
+
+template <>
 SoftObjectComponent::PersistentObjectPtrComponent(std::string&& name,
                                                   unrealsdk::unreal::FSoftObjectPtr* addr,
                                                   unrealsdk::unreal::UClass* property_class);
@@ -75,11 +80,16 @@ LazyObjectComponent::PersistentObjectPtrComponent(std::string&& name,
                                                   unrealsdk::unreal::FLazyObjectPtr* addr,
                                                   unrealsdk::unreal::UClass* property_class);
 
+template <>
+void SoftObjectComponent::try_set_to_object(unrealsdk::unreal::UObject* obj);
+template <>
+void LazyObjectComponent::try_set_to_object(unrealsdk::unreal::UObject* obj);
+
 class SoftClassComponent : public SoftObjectComponent {
    protected:
     unrealsdk::unreal::UClass* meta_class;
 
-    bool try_set_to_object(unrealsdk::unreal::UObject* obj) const override;
+    void try_set_to_object(unrealsdk::unreal::UObject* obj) override;
 
    public:
     /**

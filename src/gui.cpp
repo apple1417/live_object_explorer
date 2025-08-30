@@ -25,18 +25,21 @@ void do_search(void) {
     search_results.clear();
     selected_search_idx = 0;
 
+    std::string_view search{&search_query[0]};
     auto first_non_space =
-        std::ranges::find_if_not(search_query, [](auto chr) { return std::isspace(chr); });
+        std::ranges::find_if_not(search, [](auto chr) { return std::isspace(chr); });
     auto [last_non_space, _] =
-        std::ranges::find_last_if_not(first_non_space, std::ranges::end(search_query),
+        std::ranges::find_last_if_not(first_non_space, search.end(),
                                       [](auto chr) { return std::isspace(chr); });
-    auto search = unrealsdk::utils::widen(std::string_view(first_non_space, last_non_space));
+    search = std::string_view(first_non_space, last_non_space + 1);
+
+    auto search_wstr = unrealsdk::utils::widen(search);
 
     UClass* cls = nullptr;
-    if (search.find_first_of(L".:") == std::wstring::npos) {
-        cls = find_class(FName{search});
+    if (search.find_first_of(".:") == std::wstring::npos) {
+        cls = find_class(FName{search_wstr});
     } else {
-        UObject* obj = unrealsdk::find_object(L"UObject"_fn, search);
+        UObject* obj = unrealsdk::find_object(L"UObject"_fn, search_wstr);
         if (obj == nullptr) {
             return;
         }
