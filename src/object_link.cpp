@@ -103,8 +103,8 @@ std::pair<FName, std::wstring> split_class_obj_name(const std::string& text) {
     if (query.back() == '\'') {
         auto cls_end = std::ranges::find(query, '\'');
         if (cls_end != query.end() && cls_end != (query.end() - 1)) {
-            FName cls{unrealsdk::utils::widen(std::string_view(query.begin(), cls_end))};
-            std::string_view object_name{cls_end + 1, query.end() - 1};
+            const FName cls{unrealsdk::utils::widen(std::string_view(query.begin(), cls_end))};
+            const std::string_view object_name{cls_end + 1, query.end() - 1};
 
             return {cls, unrealsdk::utils::widen(object_name)};
         }

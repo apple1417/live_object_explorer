@@ -28,9 +28,8 @@ void do_search(void) {
     std::string_view search{&search_query[0]};
     auto first_non_space =
         std::ranges::find_if_not(search, [](auto chr) { return std::isspace(chr); });
-    auto [last_non_space, _] =
-        std::ranges::find_last_if_not(first_non_space, search.end(),
-                                      [](auto chr) { return std::isspace(chr); });
+    auto [last_non_space, _] = std::ranges::find_last_if_not(
+        first_non_space, search.end(), [](auto chr) { return std::isspace(chr); });
     search = std::string_view(first_non_space, last_non_space + 1);
 
     auto search_wstr = unrealsdk::utils::widen(search);
