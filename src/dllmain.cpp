@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "gui/gui.h"
+#include "gui.h"
 #include "injected_imgui/auto.h"
 #include "theme.h"
 

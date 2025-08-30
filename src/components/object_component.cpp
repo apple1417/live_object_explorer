@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "components/object_component.h"
 #include "components/abstract.h"
-#include "gui/object.h"
+#include "object_link.h"
 #include "object_window.h"
 
 using namespace unrealsdk::unreal;

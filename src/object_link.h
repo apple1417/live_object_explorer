@@ -1,9 +1,9 @@
-#ifndef GUI_OBJECT_H
-#define GUI_OBJECT_H
+#ifndef OBJECT_LINK_H
+#define OBJECT_LINK_H
 
 #include "pch.h"
 
-namespace live_object_explorer::gui {
+namespace live_object_explorer {
 
 const constexpr std::string_view NULL_OBJECT_NAME = "None";
 
@@ -62,6 +62,6 @@ struct CachedObjLink {
     [[nodiscard]] bool passes_filter(const ImGuiTextFilter& filter);
 };
 
-}  // namespace live_object_explorer::gui
+}  // namespace live_object_explorer
 
-#endif /* GUI_OBJECT_H */
+#endif /* OBJECT_LINK_H */

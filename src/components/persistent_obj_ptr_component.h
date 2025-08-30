@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "components/abstract.h"
-#include "gui/object.h"
+#include "object_link.h"
 
 namespace live_object_explorer {
 
@@ -15,7 +15,7 @@ class PersistentObjectPtrComponent : public AbstractComponent {
     unrealsdk::unreal::UClass* property_class;
 
     std::string identifier;
-    gui::CachedObjLink cached_obj;
+    CachedObjLink cached_obj;
 
     /**
      * @brief Tries to set this property to the given object;

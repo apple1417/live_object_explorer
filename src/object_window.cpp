@@ -2,8 +2,8 @@
 #include "object_window.h"
 #include "component_picker.h"
 #include "components/abstract.h"
-#include "gui/object.h"
 #include "native_section.h"
+#include "object_link.h"
 
 using namespace unrealsdk::unreal;
 
@@ -21,7 +21,7 @@ ObjectWindow::ObjectWindow(UObject* obj)
       id(std::format("{}##object_{}",
                      obj == nullptr ? "Unknown Object" : (std::string)obj->Name(),
                      object_window_counter++)),
-      name(obj == nullptr ? "Unknown Object" : gui::format_object_name(obj, "")) {
+      name(obj == nullptr ? "Unknown Object" : format_object_name(obj, "")) {
     for (UStruct* cls = obj->Class(); cls != nullptr; cls = cls->SuperField()) {
         this->prop_sections.emplace_back(
             std::format("{}##prop_section_{}", cls->Name(), this->prop_sections.size()),
@@ -58,7 +58,7 @@ void ObjectWindow::draw() {
 
     ImGui::Text("Dump for");
     ImGui::SameLine();
-    gui::object_link(this->name, *this->ptr, this->id);
+    object_link(this->name, *this->ptr, this->id);
 
     if (!ptr) {
         ImGui::TextDisabled("Object has been garbage collected");

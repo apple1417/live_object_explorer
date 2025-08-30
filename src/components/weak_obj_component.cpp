@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "components/weak_obj_component.h"
-#include "components/object_component.h"
-#include "gui/object.h"
+#include "object_link.h"
 #include "object_window.h"
 
 using namespace unrealsdk::unreal;

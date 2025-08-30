@@ -1,11 +1,11 @@
 #include "pch.h"
-#include "gui/object.h"
-#include "gui/gui.h"
+#include "object_link.h"
+#include "gui.h"
 #include "imgui.h"
 
 using namespace unrealsdk::unreal;
 
-namespace live_object_explorer::gui {
+namespace live_object_explorer {
 
 std::string format_object_name(unrealsdk::unreal::UObject* obj, std::string_view hash) {
     if (obj == nullptr) {
@@ -73,4 +73,4 @@ bool CachedObjLink::passes_filter(const ImGuiTextFilter& filter) {
     return filter.PassFilter(this->name.c_str());
 }
 
-}  // namespace live_object_explorer::gui
+}  // namespace live_object_explorer

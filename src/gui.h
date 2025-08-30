@@ -1,5 +1,5 @@
-#ifndef GUI_GUI_H
-#define GUI_GUI_H
+#ifndef GUI_H
+#define GUI_H
 
 #include "pch.h"
 
@@ -34,4 +34,4 @@ void open_object_window(unrealsdk::unreal::UObject* obj, const std::string& pare
 
 }  // namespace live_object_explorer::gui
 
-#endif /* GUI_GUI_H */
+#endif /* GUI_H */

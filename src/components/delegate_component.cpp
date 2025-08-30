@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "components/delegate_component.h"
 #include "components/abstract.h"
-#include "gui/object.h"
+#include "object_link.h"
 
 namespace live_object_explorer {
 
@@ -31,7 +31,7 @@ void DelegateComponent::draw(const ObjectWindowSettings& /*settings*/,
     if (current_obj == nullptr) {
         ImGui::TextDisabled("None");
     } else {
-        gui::object_link(
+        object_link(
             this->last_func_name,
             [&]() { return current_obj->Class()->find(this->last_func_name); }, this->name);
         ImGui::SameLine();

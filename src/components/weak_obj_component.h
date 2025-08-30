@@ -3,7 +3,8 @@
 
 #include "pch.h"
 #include "components/abstract.h"
-#include "gui/object.h"
+#include "gui.h"
+#include "object_link.h"
 
 namespace live_object_explorer {
 
@@ -12,7 +13,7 @@ class WeakObjectComponent : public AbstractComponent {
     std::string hashless_name;
     unrealsdk::unreal::FWeakObjectPtr* addr;
     unrealsdk::unreal::UClass* property_class;
-    gui::CachedObjLink cached_obj;
+    CachedObjLink cached_obj;
 
    public:
     /**

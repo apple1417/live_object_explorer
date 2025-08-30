@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "components/persistent_obj_ptr_component.h"
-#include "gui/gui.h"
-#include "gui/object.h"
+#include "gui.h"
+#include "object_link.h"
 #include "object_window.h"
 
 using namespace unrealsdk::unreal;

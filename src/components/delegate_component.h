@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "components/abstract.h"
-#include "gui/object.h"
+#include "object_link.h"
 
 namespace live_object_explorer {
 
@@ -17,7 +17,7 @@ class DelegateComponent : public AbstractComponent {
     std::string hashless_name;
     std::string cached_func_name;
 
-    gui::CachedObjLink cached_obj;
+    CachedObjLink cached_obj;
 
    public:
     /**

@@ -2,7 +2,7 @@
 #include "injected_imgui/dx12.h"
 #include "injected_imgui/internal.h"
 
-#include "gui/gui.h"
+#include "gui.h"
 
 using namespace injected_imgui::internal;
 
