@@ -42,9 +42,13 @@ class GenericStrComponent : public AbstractComponent {
             this->cached_str = *this->addr;
         }
 
+        ImGui::TextUnformatted(name.c_str());
+        ImGui::TableNextColumn();
+
         // TODO: editable
-        ImGui::InputText(this->name.c_str(), this->cached_str.data(),
-                         this->cached_str.capacity() + 1, ImGuiInputTextFlags_ReadOnly);
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        ImGui::InputText("##it", this->cached_str.data(), this->cached_str.capacity() + 1,
+                         ImGuiInputTextFlags_ReadOnly);
 
         this->updated_cached_this_tick = false;
     }

@@ -11,8 +11,12 @@ void draw_scalar(const std::string& name,
                  T* addr,
                  const ObjectWindowSettings& settings,
                  ImGuiDataType data_type) {
+    ImGui::TextUnformatted(name.c_str());
+    ImGui::TableNextColumn();
+
     T step = 1;
-    ImGui::InputScalar(name.c_str(), data_type, addr, &step, nullptr,
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    ImGui::InputScalar("##is", data_type, addr, &step, nullptr,
                        (std::is_integral_v<T> && settings.hex) ? "%X" : nullptr,
                        settings.editable ? 0 : ImGuiInputTextFlags_ReadOnly);
 }

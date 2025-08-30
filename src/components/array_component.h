@@ -8,7 +8,6 @@ namespace live_object_explorer {
 
 class ArrayComponent : public AbstractComponent {
    protected:
-    std::string header;
     unrealsdk::unreal::TArray<void>* addr;
     void* last_data;
     unrealsdk::unreal::UProperty* inner_prop;

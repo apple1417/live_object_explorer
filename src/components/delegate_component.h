@@ -13,8 +13,6 @@ class DelegateComponent : public AbstractComponent {
     unrealsdk::unreal::UFunction* signature;
 
     unrealsdk::unreal::FName last_func_name{0, 0};
-
-    std::string hashless_name;
     std::string cached_func_name;
 
     CachedObjLink cached_obj;

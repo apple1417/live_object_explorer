@@ -51,6 +51,7 @@ void draw_enum_entry(const char* label,
                      T* addr,
                      const EnumNameInfo<T>& info,
                      const ObjectWindowSettings& settings) {
+    ImGui::SetNextItemWidth(-FLT_MIN);
     if (ImGui::Selectable(label, value == info.value) && settings.editable) {
         *addr = info.value;
     }
@@ -67,11 +68,17 @@ void draw_enum(const std::string& name,
     auto value = *addr;
     preview = pick_preview(value, name_info, flags, settings);
 
-    if (ImGui::BeginCombo(name.c_str(), preview)) {
+    ImGui::TextUnformatted(name.c_str());
+    ImGui::TableNextColumn();
+
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    if (ImGui::BeginCombo("##cm", preview)) {
         ImGui::Checkbox("Display As Flags", &flags);
 
         ImGui::BeginDisabled(!settings.editable);
         for (const auto& info : name_info) {
+            ImGui::PushID(&info);
+
             auto label = settings.hex ? info.hex.c_str() : info.decimal.c_str();
 
             if (flags) {
@@ -79,6 +86,8 @@ void draw_enum(const std::string& name,
             } else {
                 draw_enum_entry(label, value, addr, info, settings);
             }
+
+            ImGui::PopID();
         }
         ImGui::EndDisabled();
 
@@ -86,10 +95,13 @@ void draw_enum(const std::string& name,
     }
 
     ImGui::PushID(name.c_str());
+
     T step = 1;
-    ImGui::InputScalar("##enum_input", data_type, addr, &step, nullptr,
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    ImGui::InputScalar("##is", data_type, addr, &step, nullptr,
                        (std::is_integral_v<T> && settings.hex) ? "%X" : nullptr,
                        settings.editable ? 0 : ImGuiInputTextFlags_ReadOnly);
+
     ImGui::PopID();
 }
 

@@ -9,7 +9,6 @@ namespace live_object_explorer {
 class ObjectFieldComponent : public AbstractComponent {
    protected:
     unrealsdk::unreal::WeakPointer ptr;
-    std::string hashless_name;
     std::string cached_obj_name;
 
    public:

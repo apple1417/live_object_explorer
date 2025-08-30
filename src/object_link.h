@@ -11,9 +11,8 @@ const std::string NULL_OBJECT_NAME = "None";
  * @brief Formats an object reference into a name.
  *
  * @param obj The object to get the name of. May be null.
- * @param hash A hash to ensure the object name is unique.
  */
-std::string format_object_name(unrealsdk::unreal::UObject* obj, std::string_view hash);
+std::string format_object_name(unrealsdk::unreal::UObject* obj);
 
 /**
  * @brief Draws a link to another object.
@@ -21,25 +20,17 @@ std::string format_object_name(unrealsdk::unreal::UObject* obj, std::string_view
  * @param text The link's text.
  * @param obj The object to link to. May be null.
  * @param obj_getter A function to lazily get the object. Using this assumes it's non-null.
- * @param parent_window The id of the parent window to dock, if this opens a new one.
  */
+void object_link(const std::string& text, unrealsdk::unreal::UObject* obj);
 void object_link(const std::string& text,
-                 unrealsdk::unreal::UObject* obj,
-                 const std::string& parent_window_id);
-void object_link(const std::string& text,
-                 const std::function<unrealsdk::unreal::UObject*(void)>& obj_getter,
-                 const std::string& parent_window_id);
+                 const std::function<unrealsdk::unreal::UObject*(void)>& obj_getter);
 
-// Class to automatically keep track of an object name
 struct CachedObjLink {
    private:
-    uintptr_t addr;
+    uintptr_t addr = 0;
 
-    std::string link_name;
-    std::string_view hash;
-    size_t length_before_hash;
-
-    std::string editable_name;
+    std::string name = NULL_OBJECT_NAME;
+    std::string editable_name = NULL_OBJECT_NAME;
 
     std::string failed_to_set_msg;
 
@@ -53,28 +44,23 @@ struct CachedObjLink {
    public:
     /**
      * @brief Constructs a new cached object link.
-     *
-     * @param hash A hash added to the name used in links to ensure it's unique.
      */
-    CachedObjLink(std::string_view hash);
+    CachedObjLink(void) = default;
 
     /**
      * @brief Updates the cache and draws an object link.
      *
      * @param obj The current object.
-     * @param parent_window The id of the parent window to dock, if this opens a new one.
      */
-    void draw(unrealsdk::unreal::UObject* obj, const std::string& parent_window_id);
+    void draw(unrealsdk::unreal::UObject* obj);
 
     /**
      * @brief Updates the cache and draws an object input.
      *
      * @param obj The current object.
-     * @param label The input box's label.
      * @param setter Called with a candidate object (possibly null) to try set.
      */
     void draw_editable(unrealsdk::unreal::UObject* obj,
-                       const std::string& label,
                        const std::function<void(unrealsdk::unreal::UObject*)>& setter);
 
     /**

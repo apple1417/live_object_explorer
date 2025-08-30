@@ -2,6 +2,7 @@
 #include "object_window.h"
 #include "component_picker.h"
 #include "components/abstract.h"
+#include "imgui.h"
 #include "native_section.h"
 #include "object_link.h"
 
@@ -21,14 +22,12 @@ ObjectWindow::ObjectWindow(UObject* obj)
       id(std::format("{}##object_{}",
                      obj == nullptr ? "Unknown Object" : (std::string)obj->Name(),
                      object_window_counter++)),
-      name(obj == nullptr ? "Unknown Object" : format_object_name(obj, "")) {
+      name(obj == nullptr ? "Unknown Object" : format_object_name(obj)) {
     for (UStruct* cls = obj->Class(); cls != nullptr; cls = cls->SuperField()) {
-        this->prop_sections.emplace_back(
-            std::format("{}##prop_section_{}", cls->Name(), this->prop_sections.size()),
-            decltype(ClassSection::components){});
-        this->field_sections.emplace_back(
-            std::format("{}##field_section_{}", cls->Name(), this->prop_sections.size()),
-            decltype(ClassSection::components){});
+        this->prop_sections.emplace_back((std::string)cls->Name(),
+                                         decltype(ClassSection::components){});
+        this->field_sections.emplace_back((std::string)cls->Name(),
+                                          decltype(ClassSection::components){});
 
         auto& prop_components = this->prop_sections.back().components;
         auto& field_components = this->field_sections.back().components;
@@ -58,7 +57,7 @@ void ObjectWindow::draw() {
 
     ImGui::Text("Dump for");
     ImGui::SameLine();
-    object_link(this->name, *this->ptr, this->id);
+    object_link(this->name, *this->ptr);
 
     if (!ptr) {
         ImGui::TextDisabled("Object has been garbage collected");
@@ -69,17 +68,16 @@ void ObjectWindow::draw() {
         return;
     }
 
-    auto content_region = ImGui::GetContentRegionAvail();
-    // NOLINTBEGIN(readability-magic-numbers)
-    const float width =
-        -(content_region.x - std::min(ImGui::GetFontSize() * 20.0F, content_region.x * 0.5F));
-    // NOLINTEND(readability-magic-numbers)
-
-    this->settings.filter.Draw("Filter", width);
+    this->settings.filter.Draw(
+        "Filter", -(ImGui::CalcTextSize("Filter").x + (2 * ImGui::GetStyle().ItemSpacing.x)));
     auto filter_active = this->settings.filter.IsActive();
 
-    auto draw_sections = [this, filter_active, width](std::vector<ClassSection>& section_list) {
+    auto draw_sections = [this, filter_active](std::vector<ClassSection>& section_list) {
         for (auto& section : section_list) {
+            ImGui::PushID(&section);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+
             // When you start using the filter, force all nodes open
             // When you stop, force all nodes closed
             ForceExpandTree expand_children = ForceExpandTree::NONE;
@@ -94,30 +92,41 @@ void ObjectWindow::draw() {
                 section.was_force_closed = !filter_active;
             }
 
-            if (ImGui::TreeNode(section.header.c_str())) {
-                ImGui::PushItemWidth(width);
-
+            if (ImGui::TreeNodeEx(section.header.c_str(), ImGuiTreeNodeFlags_DrawLinesFull)) {
                 for (auto& component : section.components) {
                     if (component->passes_filter(this->settings.filter)) {
+                        ImGui::PushID(&component);
+                        ImGui::TableNextRow();
+                        ImGui::TableNextColumn();
+
                         component->draw(
                             this->settings,
                             section.was_force_closed ? ForceExpandTree::CLOSE : expand_children,
                             false);
+
+                        ImGui::PopID();
                     }
                 }
 
                 section.was_force_closed = false;
-
-                ImGui::PopItemWidth();
                 ImGui::TreePop();
             }
+
+            ImGui::PopID();
         }
     };
 
     ImGui::SeparatorText("Properties");
-    draw_sections(this->prop_sections);
+    if (ImGui::BeginTable("props", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV)) {
+        draw_sections(this->prop_sections);
+        ImGui::EndTable();
+    }
+
     ImGui::SeparatorText("Class Fields");
-    draw_sections(this->field_sections);
+    if (ImGui::BeginTable("fields", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV)) {
+        draw_sections(this->field_sections);
+        ImGui::EndTable();
+    }
 
     this->settings.filter_active_last_time = filter_active;
 }

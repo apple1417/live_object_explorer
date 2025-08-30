@@ -9,7 +9,6 @@ namespace live_object_explorer {
 
 class ObjectComponent : public AbstractComponent {
    protected:
-    std::string hashless_name;
     unrealsdk::unreal::UObject** addr;
     unrealsdk::unreal::UClass* property_class;
 

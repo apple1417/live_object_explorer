@@ -9,7 +9,6 @@ namespace live_object_explorer {
 
 class MulticastDelegateComponent : public AbstractComponent {
    protected:
-    std::string header;
     unrealsdk::unreal::TArray<unrealsdk::unreal::FScriptDelegate>* addr;
     void* last_data;
 

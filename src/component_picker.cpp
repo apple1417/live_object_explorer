@@ -453,33 +453,28 @@ void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& prop_comp
                 if (array_dim > 1) {
                     auto element_size = obj->ElementSize();
                     for (decltype(array_dim) i = 0; i < array_dim; i++) {
-                        auto name =
-                            std::format("{}[{}]##comp_{}", obj->Name(), i, prop_components.size());
                         auto addr = base_addr + offset_internal + (i * element_size);
 
-                        insert_property_component<T>(prop_components, obj, std::move(name), addr);
+                        insert_property_component<T>(prop_components, obj,
+                                                     std::format("{}[{}]", obj->Name(), i), addr);
                     }
                 } else {
-                    auto name = std::format("{}##comp_{}", obj->Name(), prop_components.size());
                     auto addr = base_addr + offset_internal;
 
-                    insert_property_component<T>(prop_components, obj, std::move(name), addr);
+                    insert_property_component<T>(prop_components, obj, (std::string)obj->Name(),
+                                                 addr);
                 }
             } else {
-                auto name = std::format("{}##comp_{}", obj->Name(), field_components.size());
-                insert_field_component(field_components, obj, std::move(name));
+                insert_field_component(field_components, obj, (std::string)obj->Name());
             }
         },
         [&prop_components, &field_components](UObject* obj) {
             // If the cast fails, still split by property or not
             if (obj->is_instance(find_class<UProperty>())) {
-                auto name = std::format("{}##comp_{}", obj->Name(), prop_components.size());
-
                 // Use void to explicitly get the fallback. Address is ignored for this one.
-                insert_property_component<void>(prop_components, obj, std::move(name), 0);
+                insert_property_component<void>(prop_components, obj, (std::string)obj->Name(), 0);
             } else {
-                auto name = std::format("{}##comp_{}", obj->Name(), field_components.size());
-                insert_field_component<void>(field_components, obj, std::move(name));
+                insert_field_component<void>(field_components, obj, (std::string)obj->Name());
             }
         });
 }
@@ -491,16 +486,14 @@ void insert_component_array(std::vector<std::unique_ptr<AbstractComponent>>& pro
     cast<cast_options<>::with_input<true>>(
         inner_prop,
         [&prop_components, arr, idx]<typename T>(T* inner_prop) {
-            // Index alone is probably unique, but some components assume the hash exists, so might
-            // as well add the rest
-            auto name = std::format("[{}]##arr_{}", idx, prop_components.size());
             auto addr = reinterpret_cast<uintptr_t>(arr->data) + (idx * inner_prop->ElementSize());
 
-            insert_property_component<T>(prop_components, inner_prop, std::move(name), addr);
+            insert_property_component<T>(prop_components, inner_prop, std::format("[{}]", idx),
+                                         addr);
         },
         [&prop_components, idx](UProperty* inner_prop) {
-            auto name = std::format("[{}]##arr_{}", idx, prop_components.size());
-            insert_property_component<void>(prop_components, inner_prop, std::move(name), 0);
+            insert_property_component<void>(prop_components, inner_prop, std::format("[{}]", idx),
+                                            0);
         });
 }
 

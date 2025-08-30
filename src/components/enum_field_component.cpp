@@ -25,11 +25,18 @@ void EnumFieldComponent::draw(const ObjectWindowSettings& settings,
         ImGui::SetNextItemOpen(expand_children == ForceExpandTree::OPEN);
     }
 
-    if (ImGui::TreeNode(this->name.c_str(), "Enum %s", this->hashless_name.c_str())) {
-        object_link(this->cached_obj_name, *this->ptr, this->name);
+    if (ImGui::TreeNodeEx(this->name.c_str(), ImGuiTreeNodeFlags_DrawLinesFull, "Enum %s",
+                          this->name.c_str())) {
+        ImGui::TableNextColumn();
+
+        object_link(this->cached_obj_name, *this->ptr);
 
         for (const auto& info : this->name_info) {
+            ImGui::PushID(&info);
+
             ImGui::BulletText("%s", settings.hex ? info.hex.c_str() : info.decimal.c_str());
+
+            ImGui::PopID();
         }
 
         ImGui::TreePop();

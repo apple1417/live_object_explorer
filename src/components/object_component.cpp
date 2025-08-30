@@ -9,11 +9,7 @@ using namespace unrealsdk::unreal;
 namespace live_object_explorer {
 
 ObjectComponent::ObjectComponent(std::string&& name, UObject** addr, UClass* property_class)
-    : AbstractComponent(std::move(name)),
-      hashless_name(this->name.substr(0, this->length_before_hash)),
-      addr(addr),
-      property_class(property_class),
-      cached_obj(std::string_view{this->name}.substr(this->length_before_hash)) {}
+    : AbstractComponent(std::move(name)), addr(addr), property_class(property_class) {}
 
 void ObjectComponent::try_set_to_object(UObject* obj) {
     if (obj != nullptr && !obj->is_instance(this->property_class)) {
@@ -31,13 +27,15 @@ void ObjectComponent::draw(const ObjectWindowSettings& settings,
                            bool /*show_all_children*/) {
     auto current_obj = *this->addr;
 
+    ImGui::TextUnformatted(this->name.c_str());
+    ImGui::TableNextColumn();
+
     if (settings.editable) {
-        this->cached_obj.draw_editable(current_obj, this->name,
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        this->cached_obj.draw_editable(current_obj,
                                        [this](UObject* obj) { this->try_set_to_object(obj); });
     } else {
-        ImGui::Text("%s:", this->hashless_name.c_str());
-        ImGui::SameLine();
-        this->cached_obj.draw(current_obj, this->name);
+        this->cached_obj.draw(current_obj);
     }
 }
 

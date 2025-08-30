@@ -10,19 +10,19 @@ namespace live_object_explorer {
 WeakObjectComponent::WeakObjectComponent(std::string&& name,
                                          unrealsdk::unreal::FWeakObjectPtr* addr,
                                          unrealsdk::unreal::UClass* property_class)
-    : AbstractComponent(std::move(name)),
-      hashless_name(this->name.substr(0, this->length_before_hash)),
-      addr(addr),
-      property_class(property_class),
-      cached_obj(std::string_view{this->name}.substr(this->length_before_hash)) {}
+    : AbstractComponent(std::move(name)), addr(addr), property_class(property_class) {}
 
 void WeakObjectComponent::draw(const ObjectWindowSettings& settings,
                                ForceExpandTree /*expand_children*/,
                                bool /*show_all_children*/) {
     auto current_obj = unrealsdk::gobjects().get_weak_object(this->addr);
 
+    ImGui::TextUnformatted(this->name.c_str());
+    ImGui::TableNextColumn();
+
     if (settings.editable) {
-        this->cached_obj.draw_editable(current_obj, this->name, [this](UObject* obj) {
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        this->cached_obj.draw_editable(current_obj, [this](UObject* obj) {
             if (obj != nullptr && !obj->is_instance(this->property_class)) {
                 this->cached_obj.fail_to_set(std::format("Object is not an instance of {}:\n{}",
                                                          this->property_class->Name(),
@@ -33,9 +33,7 @@ void WeakObjectComponent::draw(const ObjectWindowSettings& settings,
             unrealsdk::gobjects().set_weak_object(this->addr, obj);
         });
     } else {
-        ImGui::Text("%s:", this->hashless_name.c_str());
-        ImGui::SameLine();
-        this->cached_obj.draw(current_obj, this->name);
+        this->cached_obj.draw(current_obj);
     }
 }
 

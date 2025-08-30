@@ -18,8 +18,12 @@ void NameComponent::draw(const ObjectWindowSettings& /*settings*/,
         this->cached_str = current_name;
     }
 
+    ImGui::TextUnformatted(this->name.c_str());
+    ImGui::TableNextColumn();
+
     // TODO: editable
-    ImGui::InputText(this->name.c_str(), this->cached_str.data(), this->cached_str.capacity() + 1,
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    ImGui::InputText("##it", this->cached_str.data(), this->cached_str.capacity() + 1,
                      ImGuiInputTextFlags_ReadOnly);
 }
 

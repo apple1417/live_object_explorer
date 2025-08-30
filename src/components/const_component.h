@@ -8,7 +8,6 @@ namespace live_object_explorer {
 
 class ConstStrComponent : public AbstractComponent {
    protected:
-    std::string hashless_name;
     std::string str;
 
    public:

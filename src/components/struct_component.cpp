@@ -30,12 +30,20 @@ void StructComponent::draw(const ObjectWindowSettings& settings,
         this->was_force_closed = expand_children == ForceExpandTree::CLOSE;
     }
 
-    if (ImGui::TreeNode(this->name.c_str())) {
+    if (ImGui::TreeNodeEx(this->name.c_str(), ImGuiTreeNodeFlags_DrawLinesFull)) {
+        ImGui::TableNextColumn();
+
         for (auto& component : this->components) {
             if (show_all_children || component->passes_filter(settings.filter)) {
+                ImGui::PushID(&component);
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+
                 component->draw(settings,
                                 this->was_force_closed ? ForceExpandTree::CLOSE : expand_children,
                                 show_all_children);
+
+                ImGui::PopID();
             }
         }
 

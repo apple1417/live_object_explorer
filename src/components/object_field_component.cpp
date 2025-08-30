@@ -8,18 +8,14 @@ using namespace unrealsdk::unreal;
 namespace live_object_explorer {
 
 ObjectFieldComponent::ObjectFieldComponent(std::string&& name, UObject* obj)
-    : AbstractComponent(std::move(name)),
-      ptr(obj),
-      hashless_name(this->name.substr(0, this->length_before_hash)),
-      cached_obj_name(
-          format_object_name(obj, std::string_view{this->name}.substr(this->length_before_hash))) {}
+    : AbstractComponent(std::move(name)), ptr(obj), cached_obj_name(format_object_name(obj)) {}
 
 void ObjectFieldComponent::draw(const ObjectWindowSettings& /*settings*/,
                                 ForceExpandTree /*expand_children*/,
                                 bool /*show_all_children*/) {
-    ImGui::Text("%s:", this->hashless_name.c_str());
-    ImGui::SameLine();
-    object_link(this->cached_obj_name, *this->ptr, this->name);
+    ImGui::TextUnformatted(this->name.c_str());
+    ImGui::TableNextColumn();
+    object_link(this->cached_obj_name, *this->ptr);
 }
 
 bool ObjectFieldComponent::passes_filter(const ImGuiTextFilter& filter) {

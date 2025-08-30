@@ -16,13 +16,12 @@ enum class ForceExpandTree : uint8_t {
 class AbstractComponent {
    protected:
     std::string name;
-    size_t length_before_hash;
 
    public:
     /**
      * @brief Constructs a new component.
      *
-     * @param name The component's name. May include hashes.
+     * @param name The component's name. Should not include hashes.
      */
     AbstractComponent(std::string&& name);
 

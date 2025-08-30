@@ -14,10 +14,6 @@ MulticastDelegateComponent::MulticastDelegateComponent(
     unrealsdk::unreal::TArray<unrealsdk::unreal::FScriptDelegate>* addr,
     unrealsdk::unreal::UFunction* signature)
     : AbstractComponent(std::move(name)),
-      header(std::format("({}) {}#{}",
-                         addr->size(),
-                         std::string_view{this->name}.substr(0, this->length_before_hash),
-                         std::string_view{this->name}.substr(this->length_before_hash))),
       addr(addr),
       last_data(nullptr),
       signature(signature),
@@ -26,15 +22,6 @@ MulticastDelegateComponent::MulticastDelegateComponent(
 void MulticastDelegateComponent::draw(const ObjectWindowSettings& settings,
                                       ForceExpandTree expand_children,
                                       bool show_all_children) {
-    auto current_count = this->addr->size();
-    auto old_count = this->components.size();
-
-    if (current_count != old_count) {
-        this->header = std::format("({}) {}#{}", current_count,
-                                   std::string_view{this->name}.substr(0, this->length_before_hash),
-                                   std::string_view{this->name}.substr(this->length_before_hash));
-    }
-
     show_all_children = show_all_children || AbstractComponent::passes_filter(settings.filter);
 
     if (expand_children != ForceExpandTree::NONE) {
@@ -42,7 +29,12 @@ void MulticastDelegateComponent::draw(const ObjectWindowSettings& settings,
         this->was_force_closed = expand_children == ForceExpandTree::CLOSE;
     }
 
-    if (ImGui::TreeNode(this->header.c_str())) {
+    auto current_count = this->addr->size();
+    if (ImGui::TreeNodeEx(this->name.c_str(), ImGuiTreeNodeFlags_DrawLinesFull, "(%zu) %s",
+                          current_count, this->name.c_str())) {
+        ImGui::TableNextColumn();
+
+        auto old_count = this->components.size();
         if (this->addr->data != this->last_data) {
             this->last_data = this->addr->data;
             this->components.clear();
@@ -56,16 +48,22 @@ void MulticastDelegateComponent::draw(const ObjectWindowSettings& settings,
             for (size_t i = old_count; i < current_count; i++) {
                 // Main difference: just insert a delegate component directly
                 this->components.emplace_back(
-                    std::format("[{}]##arr_{}", this->components.size(), this->components.size()),
+                    std::format("[{}]", this->components.size(), this->components.size()),
                     &(*this->addr)[i], this->signature);
             }
         }
 
         for (auto& component : this->components) {
             if (show_all_children || component.passes_filter(settings.filter)) {
+                ImGui::PushID(&component);
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+
                 component.draw(settings,
                                this->was_force_closed ? ForceExpandTree::CLOSE : expand_children,
                                show_all_children);
+
+                ImGui::PopID();
             }
         }
 

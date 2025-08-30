@@ -5,14 +5,14 @@
 namespace live_object_explorer {
 
 ConstStrComponent::ConstStrComponent(std::string&& name, std::string&& str)
-    : AbstractComponent(std::move(name)),
-      hashless_name(this->name.substr(0, this->length_before_hash)),
-      str(std::move(str)) {}
+    : AbstractComponent(std::move(name)), str(std::move(str)) {}
 
 void ConstStrComponent::draw(const ObjectWindowSettings& /*settings*/,
                              ForceExpandTree /*expand_children*/,
                              bool /*show_all_children*/) {
-    ImGui::Text("%s: %s", this->hashless_name.c_str(), this->str.c_str());
+    ImGui::TextUnformatted(this->name.c_str());
+    ImGui::TableNextColumn();
+    ImGui::TextUnformatted(this->str.c_str());
 }
 
 bool ConstStrComponent::passes_filter(const ImGuiTextFilter& filter) {
@@ -22,15 +22,19 @@ bool ConstStrComponent::passes_filter(const ImGuiTextFilter& filter) {
 void ConstDisabledStrComponent::draw(const ObjectWindowSettings& /*settings*/,
                                      ForceExpandTree /*expand_children*/,
                                      bool /*show_all_children*/) {
-    ImGui::Text("%s:", this->hashless_name.c_str());
-    ImGui::SameLine();
+    ImGui::TextUnformatted(this->name.c_str());
+    ImGui::TableNextColumn();
     ImGui::TextDisabled("%s", this->str.c_str());
 }
 
 void ConstTextComponent::draw(const ObjectWindowSettings& /*settings*/,
                               ForceExpandTree /*expand_children*/,
                               bool /*show_all_children*/) {
-    ImGui::InputText(this->name.c_str(), this->str.data(), this->str.size() + 1,
+    ImGui::TextUnformatted(this->name.c_str());
+    ImGui::TableNextColumn();
+
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    ImGui::InputText("##it", this->str.data(), this->str.capacity() + 1,
                      ImGuiInputTextFlags_ReadOnly);
 }
 

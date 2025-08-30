@@ -84,14 +84,22 @@ void StructFieldComponent::draw(const ObjectWindowSettings& /*settings*/,
         ImGui::SetNextItemOpen(expand_children == ForceExpandTree::OPEN);
     }
 
-    if (ImGui::TreeNode(this->name.c_str(), "%s %s", this->is_function ? "Function" : "Struct",
-                        this->hashless_name.c_str())) {
-        object_link(this->cached_obj_name, *this->ptr, this->name);
+    if (ImGui::TreeNodeEx(this->name.c_str(), ImGuiTreeNodeFlags_DrawLinesFull, "%s %s",
+                          this->is_function ? "Function" : "Struct", this->name.c_str())) {
+        ImGui::TableNextColumn();
+
+        object_link(this->cached_obj_name, *this->ptr);
 
         for (const auto& prop_info : this->properties) {
-            ImGui::BulletText("%s:", prop_info.name.c_str());
-            ImGui::SameLine();
-            object_link(prop_info.type, *prop_info.link, this->name);
+            ImGui::PushID(&prop_info);
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+
+            ImGui::BulletText("%s", prop_info.name.c_str());
+            ImGui::TableNextColumn();
+            object_link(prop_info.type, *prop_info.link);
+
+            ImGui::PopID();
         }
 
         ImGui::TreePop();

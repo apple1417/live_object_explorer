@@ -8,11 +8,7 @@ namespace live_object_explorer {
 DelegateComponent::DelegateComponent(std::string&& name,
                                      unrealsdk::unreal::FScriptDelegate* addr,
                                      unrealsdk::unreal::UFunction* signature)
-    : AbstractComponent(std::move(name)),
-      addr(addr),
-      signature(signature),
-      hashless_name(this->name.substr(0, this->length_before_hash)),
-      cached_obj(std::string_view{this->name}.substr(this->length_before_hash)) {}
+    : AbstractComponent(std::move(name)), addr(addr), signature(signature) {}
 
 void DelegateComponent::draw(const ObjectWindowSettings& /*settings*/,
                              ForceExpandTree /*expand_children*/,
@@ -21,23 +17,22 @@ void DelegateComponent::draw(const ObjectWindowSettings& /*settings*/,
 
     if (this->addr->func_name != this->last_func_name) {
         this->last_func_name = this->addr->func_name;
-        this->cached_func_name =
-            std::format("{}{}", this->last_func_name,
-                        std::string_view{this->name}.substr(this->length_before_hash));
+        this->cached_func_name = this->last_func_name;
     }
 
-    ImGui::Text("%s:", this->hashless_name.c_str());
-    ImGui::SameLine();
+    ImGui::TextUnformatted(this->name.c_str());
+    ImGui::TableNextColumn();
+
     if (current_obj == nullptr) {
         ImGui::TextDisabled("None");
     } else {
-        object_link(
-            this->last_func_name,
-            [&]() { return current_obj->Class()->find(this->last_func_name); }, this->name);
+        // TODO: editable
+        object_link(this->last_func_name,
+                    [&]() { return current_obj->Class()->find(this->last_func_name); });
         ImGui::SameLine();
         ImGui::Text("on");
         ImGui::SameLine();
-        this->cached_obj.draw(current_obj, this->name);
+        this->cached_obj.draw(current_obj);
     }
 }
 

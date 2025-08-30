@@ -10,7 +10,6 @@ namespace live_object_explorer {
 
 class WeakObjectComponent : public AbstractComponent {
    protected:
-    std::string hashless_name;
     unrealsdk::unreal::FWeakObjectPtr* addr;
     unrealsdk::unreal::UClass* property_class;
     CachedObjLink cached_obj;

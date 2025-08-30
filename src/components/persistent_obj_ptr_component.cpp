@@ -35,11 +35,9 @@ SoftObjectComponent::PersistentObjectPtrComponent(std::string&& name,
                                                   FSoftObjectPtr* addr,
                                                   UClass* property_class)
     : AbstractComponent(std::move(name)),
-      hashless_name(this->name.substr(0, this->length_before_hash)),
       addr(addr),
       property_class(property_class),
-      identifier(addr->identifier.asset_path_name),
-      cached_obj(std::string_view{this->name}.substr(this->length_before_hash)) {
+      identifier(addr->identifier.asset_path_name) {
     auto subpath_size = addr->identifier.subpath.size();
     if (subpath_size > 0) {
         identifier.reserve(identifier.size() + subpath_size + 1);
@@ -53,15 +51,13 @@ LazyObjectComponent::PersistentObjectPtrComponent(std::string&& name,
                                                   FLazyObjectPtr* addr,
                                                   UClass* property_class)
     : AbstractComponent(std::move(name)),
-      hashless_name(this->name.substr(0, this->length_before_hash)),
       addr(addr),
       property_class(property_class),
       identifier(std::format("{:08X}-{:08X}-{:08X}-{:08X}",
                              addr->identifier.guid_a,
                              addr->identifier.guid_b,
                              addr->identifier.guid_c,
-                             addr->identifier.guid_d)),
-      cached_obj(std::string_view{this->name}.substr(this->length_before_hash)) {}
+                             addr->identifier.guid_d)) {}
 
 template <typename T>
 void PersistentObjectPtrComponent<T>::draw_impl(const ObjectWindowSettings& settings,
@@ -69,13 +65,15 @@ void PersistentObjectPtrComponent<T>::draw_impl(const ObjectWindowSettings& sett
                                                 bool /*show_all_children*/) {
     auto current_obj = unrealsdk::gobjects().get_weak_object(&this->addr->weak_ptr);
 
+    ImGui::TextUnformatted(this->name.c_str());
+    ImGui::TableNextColumn();
+
     if (settings.editable) {
-        this->cached_obj.draw_editable(current_obj, this->name,
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        this->cached_obj.draw_editable(current_obj,
                                        [this](UObject* obj) { this->try_set_to_object(obj); });
     } else {
-        ImGui::Text("%s:", this->hashless_name.c_str());
-        ImGui::SameLine();
-        this->cached_obj.draw(current_obj, this->name);
+        this->cached_obj.draw(current_obj);
     }
 }
 

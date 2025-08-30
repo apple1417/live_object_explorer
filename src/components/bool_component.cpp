@@ -14,19 +14,19 @@ void BoolComponent::draw(const ObjectWindowSettings& settings,
                          bool /*show_all_children*/) {
     bool set = ((*this->addr) & this->mask) != 0;
 
-    if (!settings.editable) {
-        ImGui::BeginDisabled();
-        ImGui::Checkbox(this->name.c_str(), &set);
-        ImGui::EndDisabled();
-        return;
-    }
+    ImGui::TextUnformatted(this->name.c_str());
+    ImGui::TableNextColumn();
 
-    ImGui::Checkbox(this->name.c_str(), &set);
+    ImGui::BeginDisabled(!settings.editable);
+    ImGui::Checkbox("##cb", &set);
+    ImGui::EndDisabled();
 
-    if (set) {
-        *this->addr |= this->mask;
-    } else {
-        *this->addr &= ~this->mask;
+    if (settings.editable) {
+        if (set) {
+            *this->addr |= this->mask;
+        } else {
+            *this->addr &= ~this->mask;
+        }
     }
 }
 

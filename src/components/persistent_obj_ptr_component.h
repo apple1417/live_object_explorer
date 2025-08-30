@@ -10,7 +10,6 @@ namespace live_object_explorer {
 template <typename T>
 class PersistentObjectPtrComponent : public AbstractComponent {
    protected:
-    std::string hashless_name;
     T* addr;
     unrealsdk::unreal::UClass* property_class;
 

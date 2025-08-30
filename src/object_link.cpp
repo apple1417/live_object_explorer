@@ -6,12 +6,12 @@ using namespace unrealsdk::unreal;
 
 namespace live_object_explorer {
 
-std::string format_object_name(unrealsdk::unreal::UObject* obj, std::string_view hash) {
+std::string format_object_name(unrealsdk::unreal::UObject* obj) {
     if (obj == nullptr) {
         return std::string{NULL_OBJECT_NAME};
     }
-    return std::format("{}'{}'{}", obj->Class()->Name(),
-                       unrealsdk::utils::narrow(obj->get_path_name()), hash);
+    return std::format("{}'{}'", obj->Class()->Name(),
+                       unrealsdk::utils::narrow(obj->get_path_name()));
 }
 
 namespace {
@@ -29,7 +29,7 @@ void copy_to_clipboard(const std::string& text) {
 
 }  // namespace
 
-void object_link(const std::string& text, UObject* obj, const std::string& parent_window_id) {
+void object_link(const std::string& text, UObject* obj) {
     if (obj == nullptr) {
         ImGui::TextDisabled("%s", text.c_str());
     } else {
@@ -37,55 +37,41 @@ void object_link(const std::string& text, UObject* obj, const std::string& paren
             if (ImGui::GetIO().KeyShift) {
                 copy_to_clipboard(text);
             } else {
-                gui::open_object_window(obj, parent_window_id);
+                gui::open_object_window(obj);
             }
         }
     }
 }
 void object_link(const std::string& text,
-                 const std::function<unrealsdk::unreal::UObject*(void)>& obj_getter,
-                 const std::string& parent_window_id) {
+                 const std::function<unrealsdk::unreal::UObject*(void)>& obj_getter) {
     if (ImGui::TextLink(text.c_str())) {
         if (ImGui::GetIO().KeyShift) {
             copy_to_clipboard(text);
         } else {
             auto obj = obj_getter();
             if (obj != nullptr) {
-                gui::open_object_window(obj, parent_window_id);
+                gui::open_object_window(obj);
             }
         }
     }
 }
 
-CachedObjLink::CachedObjLink(std::string_view hash)
-    : addr(0),
-      link_name(NULL_OBJECT_NAME),
-      hash(hash),
-      length_before_hash(NULL_OBJECT_NAME.size()) {}
-
 void CachedObjLink::update_obj(unrealsdk::unreal::UObject* obj) {
     if (this->addr != reinterpret_cast<uintptr_t>(obj)) {
         this->addr = reinterpret_cast<uintptr_t>(obj);
+        this->name = format_object_name(obj);
 
-        if (obj == nullptr) {
-            this->link_name = NULL_OBJECT_NAME;
-            this->length_before_hash = NULL_OBJECT_NAME.size();
-
-            // Make editable name empty so that the input box shows the hint text instead
-            this->editable_name = "";
-        } else {
-            this->editable_name = format_object_name(obj, "");
-
-            this->link_name = this->editable_name;
-            this->length_before_hash = this->link_name.size();
-            this->link_name.append(this->hash);
-        }
+        // Set editable name to the empty string when null so that we get the hint text instead
+        this->editable_name = obj == nullptr ? "" : this->name;
     }
 }
 
-void CachedObjLink::draw(unrealsdk::unreal::UObject* obj, const std::string& parent_window_id) {
+void CachedObjLink::draw(unrealsdk::unreal::UObject* obj) {
     update_obj(obj);
-    object_link(this->link_name, obj, parent_window_id);
+
+    ImGui::PushID(this);
+    object_link(this->name, obj);
+    ImGui::PopID();
 }
 
 namespace {
@@ -130,12 +116,13 @@ std::pair<FName, std::wstring> split_class_obj_name(const std::string& text) {
 }  // namespace
 
 void CachedObjLink::draw_editable(unrealsdk::unreal::UObject* obj,
-                                  const std::string& label,
                                   const std::function<void(unrealsdk::unreal::UObject*)>& setter) {
     update_obj(obj);
 
+    ImGui::PushID(this);
+
     if (ImGui::InputTextWithHint(
-            label.c_str(), NULL_OBJECT_NAME.c_str(), this->editable_name.data(),
+            "##it", NULL_OBJECT_NAME.c_str(), this->editable_name.data(),
             this->editable_name.capacity() + 1,
             ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_EnterReturnsTrue,
             string_resize_callback, &this->editable_name)) {
@@ -155,12 +142,10 @@ void CachedObjLink::draw_editable(unrealsdk::unreal::UObject* obj,
     }
 
     if (!this->failed_to_set_msg.empty()) {
-        ImGui::PushID(this);
-
         bool open = true;
         if (ImGui::BeginPopupModal("Failed to set object", &open,
                                    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::Text("%s", this->failed_to_set_msg.c_str());
+            ImGui::TextUnformatted(this->failed_to_set_msg.c_str());
 
             if (ImGui::Button("Close")) {
                 open = false;
@@ -171,9 +156,9 @@ void CachedObjLink::draw_editable(unrealsdk::unreal::UObject* obj,
         if (!open) {
             this->failed_to_set_msg.clear();
         }
-
-        ImGui::PopID();
     }
+
+    ImGui::PopID();
 }
 
 void CachedObjLink::fail_to_set(std::string&& msg) {
@@ -183,8 +168,7 @@ void CachedObjLink::fail_to_set(std::string&& msg) {
     if (this->addr == 0) {
         this->editable_name = "";
     } else {
-        this->editable_name = this->link_name;
-        this->editable_name.resize(this->link_name.size() - this->hash.size());
+        this->editable_name = this->name;
     }
 
     ImGui::PushID(this);
@@ -193,10 +177,7 @@ void CachedObjLink::fail_to_set(std::string&& msg) {
 }
 
 bool CachedObjLink::passes_filter(const ImGuiTextFilter& filter) {
-    // If we used editable name, someone could delete the bit that passes the filter while editing
-    // Use link name to avoid this - making sure to avoid the hash
-    return filter.PassFilter(&this->link_name.c_str()[0],
-                             &this->link_name.c_str()[this->length_before_hash]);
+    return filter.PassFilter(this->name.c_str());
 }
 
 }  // namespace live_object_explorer
