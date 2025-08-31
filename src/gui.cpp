@@ -91,7 +91,7 @@ void draw_search_window(void) {
 
         ImGui::SetNextItemWidth(-rhs_width);
         if (ImGui::InputText(
-                "##search_bar", &search_query[0], (sizeof(search_query) / sizeof(search_query[0])),
+                "##search_bar", search_query.data(), search_query.size(),
                 ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
             do_search();
         }

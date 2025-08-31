@@ -71,10 +71,11 @@ jobs:
             container: clang-cross
           - preset: clang-cross-oak-release
             container: clang-cross
-          - preset: llvm-mingw-willow-release
-            container: llvm-mingw
-          - preset: llvm-mingw-oak-release
-            container: llvm-mingw
+          # Temporarily disabled since libc++ doesn't support std::views::enumerate yet
+          # - preset: llvm-mingw-willow-release
+          #   container: llvm-mingw
+          # - preset: llvm-mingw-oak-release
+          #   container: llvm-mingw
           - preset: mingw-willow-release
             container: mingw
           - preset: mingw-oak-release
