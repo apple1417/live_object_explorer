@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "object_link.h"
 #include "gui.h"
+#include "string_helper.h"
 
 using namespace unrealsdk::unreal;
 
@@ -76,16 +77,6 @@ void CachedObjLink::draw(unrealsdk::unreal::UObject* obj) {
 }
 
 namespace {
-
-int string_resize_callback(ImGuiInputTextCallbackData* data) {
-    if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
-        auto text = reinterpret_cast<std::string*>(data->UserData);
-        IM_ASSERT(data->Buf == text->data());
-        text->resize(data->BufTextLen);
-        data->Buf = text->data();
-    }
-    return 0;
-}
 
 /**
  * @brief Splits an object name into class/name.

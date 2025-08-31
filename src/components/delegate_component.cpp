@@ -3,6 +3,7 @@
 #include "components/abstract.h"
 #include "object_link.h"
 #include "object_window.h"
+#include "string_helper.h"
 
 using namespace unrealsdk::unreal;
 
@@ -15,20 +16,6 @@ DelegateComponent::DelegateComponent(std::string&& name,
       addr(addr),
       signature(signature),
       func_name_pending_edit(false) {}
-
-namespace {
-
-int string_resize_callback(ImGuiInputTextCallbackData* data) {
-    if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
-        auto text = reinterpret_cast<std::string*>(data->UserData);
-        IM_ASSERT(data->Buf == text->data());
-        text->resize(data->BufTextLen);
-        data->Buf = text->data();
-    }
-    return 0;
-}
-
-}  // namespace
 
 void DelegateComponent::draw_editable(UObject* current_obj) {
     /*
@@ -148,8 +135,10 @@ void DelegateComponent::draw(const ObjectWindowSettings& settings,
 
 bool DelegateComponent::passes_filter(const ImGuiTextFilter& filter) {
     return AbstractComponent::passes_filter(filter)
-           || filter.PassFilter(this->cached_func_name.c_str())
-           || this->cached_obj.passes_filter(filter);
+           || this->cached_obj.passes_filter(filter)
+           // Always pass if an edit is pending to try make sure it doesn't disappear if you're
+           // editing the part that matches
+           || this->func_name_pending_edit || filter.PassFilter(this->cached_func_name.c_str());
 }
 
 }  // namespace live_object_explorer

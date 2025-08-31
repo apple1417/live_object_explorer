@@ -9,8 +9,9 @@ namespace live_object_explorer {
 class NameComponent : public AbstractComponent {
    protected:
     unrealsdk::unreal::FName* addr;
-    unrealsdk::unreal::FName cached_name;
+    unrealsdk::unreal::FName last_name;
     std::string cached_str;
+    bool pending_edit;
 
    public:
     /**

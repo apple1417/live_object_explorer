@@ -13,12 +13,10 @@ class GenericStrComponent : public AbstractComponent {
     std::string cached_str;
     bool updated_cached_this_tick = false;
 
-    /**
-     * @brief Updates the cached string, if it hasn't already this loop
-     */
-    void update_cached_str(void) {
-        // There's not really an easy way to cache a string, we just need to read it each loop
-    }
+    void draw_impl(const ObjectWindowSettings& settings,
+                   ForceExpandTree expand_children,
+                   bool show_all_children);
+    [[nodiscard]] bool passes_filter_impl(const ImGuiTextFilter& filter);
 
    public:
     /**
@@ -27,43 +25,36 @@ class GenericStrComponent : public AbstractComponent {
      * @param name The component's name. May include hashes.
      * @param addr Pointer to the property.
      */
-    GenericStrComponent(std::string&& name, T* addr)
-        : AbstractComponent(std::move(name)), addr(addr) {}
+    GenericStrComponent(std::string&& name, T* addr);
 
     ~GenericStrComponent() override = default;
-
-    void draw(const ObjectWindowSettings& /*settings*/,
-              ForceExpandTree /*expand_children*/,
-              bool /*show_all_children*/) override {
-        // Don't have much of a choice other than converting this each tick, we might not catch
-        // modifications otherwise
-        // Slight optimization: if we read it while filtering, we won't need to re-read here
-        if (!this->updated_cached_this_tick) {
-            this->cached_str = *this->addr;
-        }
-
-        ImGui::TextUnformatted(name.c_str());
-        ImGui::TableNextColumn();
-
-        // TODO: editable
-        ImGui::SetNextItemWidth(-FLT_MIN);
-        ImGui::InputText("##it", this->cached_str.data(), this->cached_str.capacity() + 1,
-                         ImGuiInputTextFlags_ReadOnly);
-
-        this->updated_cached_this_tick = false;
-    }
-
-    [[nodiscard]] bool passes_filter(const ImGuiTextFilter& filter) override {
-        this->cached_str = *this->addr;
-        this->updated_cached_this_tick = true;
-
-        return AbstractComponent::passes_filter(filter)
-               || filter.PassFilter(this->cached_str.c_str());
-    }
+    void draw(const ObjectWindowSettings& settings,
+              ForceExpandTree expand_children,
+              bool show_all_children) override;
+    [[nodiscard]] bool passes_filter(const ImGuiTextFilter& filter) override;
 };
 
 using StrComponent = GenericStrComponent<unrealsdk::unreal::UnmanagedFString>;
 using TextComponent = GenericStrComponent<unrealsdk::unreal::FText>;
+
+template <>
+StrComponent::GenericStrComponent(std::string&& name, unrealsdk::unreal::UnmanagedFString* addr);
+template <>
+TextComponent::GenericStrComponent(std::string&& name, unrealsdk::unreal::FText* addr);
+
+template <>
+void StrComponent::draw(const ObjectWindowSettings& settings,
+                        ForceExpandTree expand_children,
+                        bool show_all_children);
+template <>
+void TextComponent::draw(const ObjectWindowSettings& settings,
+                         ForceExpandTree expand_children,
+                         bool show_all_children);
+
+template <>
+[[nodiscard]] bool StrComponent::passes_filter(const ImGuiTextFilter& filter);
+template <>
+[[nodiscard]] bool TextComponent::passes_filter(const ImGuiTextFilter& filter);
 
 }  // namespace live_object_explorer
 
