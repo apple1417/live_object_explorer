@@ -48,8 +48,7 @@ const std::string& ObjectWindow::get_id() const {
 // NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void ObjectWindow::draw() {
     if (ImGui::BeginMenuBar()) {
-        // TODO
-        ImGui::MenuItem("Enable Editing", nullptr, &this->settings.editable, false);
+        ImGui::MenuItem("Enable Editing", nullptr, &this->settings.editable);
         ImGui::MenuItem("Hex Integers", nullptr, &this->settings.hex);
 
         ImGui::EndMenuBar();
