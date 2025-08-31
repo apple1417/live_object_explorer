@@ -41,6 +41,9 @@ void object_link(const std::string& text, UObject* obj) {
                 gui::open_object_window(obj);
             }
         }
+        if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && ImGui::IsItemHovered()) {
+            copy_to_clipboard(text);
+        }
     }
 }
 void object_link(const std::string& text,
@@ -54,6 +57,9 @@ void object_link(const std::string& text,
                 gui::open_object_window(obj);
             }
         }
+    }
+    if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && ImGui::IsItemHovered()) {
+        copy_to_clipboard(text);
     }
 }
 
