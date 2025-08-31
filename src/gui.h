@@ -11,6 +11,13 @@ namespace live_object_explorer::gui {
 void show(void);
 
 /**
+ * @brief Perform a new search.
+ *
+ * @param query The search query.
+ */
+void search(std::string_view query);
+
+/**
  * @brief Checks if any part of the gui is open.
  *
  * @return True if it's open.

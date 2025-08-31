@@ -18,9 +18,14 @@ DWORD WINAPI startup_thread(LPVOID /*unused*/) {
         while (!unrealsdk::is_console_ready()) {}
 
         auto cmd = unrealsdk::config::get_str("live_object_explorer.command").value_or("explore");
-        if (!unrealsdk::commands::add_command(unrealsdk::utils::widen(cmd),
-                                              [](const wchar_t* /* line */, size_t /* len */,
-                                                 size_t /* cmd_len */) { gui::show(); })) {
+        if (!unrealsdk::commands::add_command(
+                unrealsdk::utils::widen(cmd), [](const wchar_t* line, size_t len, size_t cmd_len) {
+                    gui::show();
+                    auto args = std::wstring_view{line, len}.substr(cmd_len);
+                    if (!args.empty()) {
+                        gui::search(unrealsdk::utils::narrow(args));
+                    }
+                })) {
             LOG(ERROR, "Live Object Explorer: failed to add '{}' command", cmd);
         }
 

@@ -12,7 +12,7 @@ namespace {
 bool search_window_open = false;
 
 // NOLINTNEXTLINE(readability-magic-numbers)
-char search_query[4096] = "";
+std::array<char, 1024> search_query{};
 
 std::vector<std::pair<std::string, WeakPointer>> search_results{};
 size_t selected_search_idx = 0;
@@ -23,7 +23,7 @@ void do_search(void) {
     search_results.clear();
     selected_search_idx = 0;
 
-    std::string_view search{&search_query[0]};
+    std::string_view search{search_query.data()};
     auto first_non_space =
         std::ranges::find_if_not(search, [](auto chr) { return std::isspace(chr); });
     auto [last_non_space, _] = std::ranges::find_last_if_not(
@@ -59,6 +59,18 @@ void do_search(void) {
                       }),
                       std::back_inserter(search_results));
 }
+
+}  // namespace
+
+void search(std::string_view query) {
+    auto size = std::min(query.size(), search_query.size() - 1);
+    memcpy(search_query.data(), query.data(), size);
+    search_query.at(size) = '\0';
+
+    do_search();
+}
+
+namespace {
 
 /**
  * @brief Draws the search window, if applicable.
