@@ -63,6 +63,7 @@ void CachedObjLink::update_obj(unrealsdk::unreal::UObject* obj) {
 
         // Set editable name to the empty string when null so that we get the hint text instead
         this->editable_name = obj == nullptr ? "" : this->name;
+        this->pending_edit = false;
     }
 }
 
@@ -121,11 +122,25 @@ void CachedObjLink::draw_editable(unrealsdk::unreal::UObject* obj,
 
     ImGui::PushID(this);
 
+    // While an edit's pending, always use the active bg colour, so it's obvious if you go select
+    // something else without submitting.
+    if (this->pending_edit) {
+        ImGui::PushStyleColor(ImGuiCol_FrameBg,
+                              ImGui::GetCurrentContext()->Style.Colors[ImGuiCol_FrameBgActive]);
+    }
+
     if (ImGui::InputTextWithHint(
             "##it", NULL_OBJECT_NAME.c_str(), this->editable_name.data(),
             this->editable_name.capacity() + 1,
             ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_EnterReturnsTrue,
             string_resize_callback, &this->editable_name)) {
+        if (this->pending_edit) {
+            ImGui::PopStyleColor();
+        }
+        this->pending_edit = false;
+
+        ImGui::PopID();
+
         if (this->editable_name.empty()) {
             setter(nullptr);
         } else {
@@ -138,6 +153,14 @@ void CachedObjLink::draw_editable(unrealsdk::unreal::UObject* obj,
             } else {
                 setter(found_obj);
             }
+        }
+
+        ImGui::PushID(this);
+    } else {
+        if (this->pending_edit) {
+            ImGui::PopStyleColor();
+        } else if (ImGui::IsItemEdited()) {
+            this->pending_edit = true;
         }
     }
 
@@ -170,8 +193,11 @@ void CachedObjLink::fail_to_set(std::string&& msg) {
     } else {
         this->editable_name = this->name;
     }
+    this->pending_edit = false;
 
+    ImGui::PushID(this);
     ImGui::OpenPopup("Failed to set object");
+    ImGui::PopID();
 }
 
 bool CachedObjLink::passes_filter(const ImGuiTextFilter& filter) {

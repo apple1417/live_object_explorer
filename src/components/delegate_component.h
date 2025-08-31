@@ -17,6 +17,10 @@ class DelegateComponent : public AbstractComponent {
 
     CachedObjLink cached_obj;
 
+    bool func_name_pending_edit;
+
+    void draw_editable(unrealsdk::unreal::UObject* current_obj);
+
    public:
     /**
      * @brief Creates a new component pointing at a delegate property.

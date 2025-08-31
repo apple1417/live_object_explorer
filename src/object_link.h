@@ -30,9 +30,11 @@ struct CachedObjLink {
     uintptr_t addr = 0;
 
     std::string name = NULL_OBJECT_NAME;
-    std::string editable_name = NULL_OBJECT_NAME;
+    std::string editable_name;
 
     std::string failed_to_set_msg;
+
+    bool pending_edit = false;
 
     /**
      * @brief Updates the cached object info.
@@ -65,7 +67,7 @@ struct CachedObjLink {
 
     /**
      * @brief Shows a popup window explaining why a setter failed.
-     * @note Must only be called from inside the setter.
+     * @note May be called outside of the setter.
      * @note The popup is only drawn by draw_editable.
      *
      * @param msg The reason for failure.
