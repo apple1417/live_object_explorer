@@ -116,13 +116,17 @@ void ObjectWindow::draw() {
     };
 
     ImGui::SeparatorText("Properties");
-    if (ImGui::BeginTable("props", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV)) {
+    if (ImGui::BeginTable("props", 2,
+                          ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV
+                              | ImGuiTableFlags_NoSavedSettings)) {
         draw_sections(this->prop_sections);
         ImGui::EndTable();
     }
 
     ImGui::SeparatorText("Class Fields");
-    if (ImGui::BeginTable("fields", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV)) {
+    if (ImGui::BeginTable("fields", 2,
+                          ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV
+                              | ImGuiTableFlags_NoSavedSettings)) {
         draw_sections(this->field_sections);
         ImGui::EndTable();
     }

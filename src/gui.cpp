@@ -9,8 +9,6 @@ namespace live_object_explorer::gui {
 
 namespace {
 
-const constexpr auto DEFAULT_WINDOW_SIZE = ImVec2{400, 500};
-
 bool search_window_open = false;
 
 // NOLINTNEXTLINE(readability-magic-numbers)
@@ -71,7 +69,8 @@ void draw_search_window(void) {
         return;
     }
 
-    ImGui::SetNextWindowSize(DEFAULT_WINDOW_SIZE, ImGuiCond_FirstUseEver);
+    const constexpr auto default_window_size = ImVec2{500, 600};
+    ImGui::SetNextWindowSize(default_window_size, ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Live Object Explorer", &search_window_open)) {
         auto text_size = ImGui::CalcTextSize("Search");
         auto rhs_width = text_size.x + (2 * ImGui::GetStyle().ItemSpacing.x);
@@ -138,6 +137,16 @@ void dock_latest_obj_window(const std::string& /* parent_window_id */) {
     // TODO
 }
 
+ImVec2 get_default_object_window_size(void) {
+    const constexpr auto default_x = 600;
+    const constexpr auto default_y = 600;
+
+    return {(float)unrealsdk::config::get_int("live_object_explorer.default_window_size.x")
+                .value_or(default_x),
+            (float)unrealsdk::config::get_int("live_object_explorer.default_window_size.y")
+                .value_or(default_y)};
+}
+
 }  // namespace
 
 void open_object_window(UObject* obj) {
@@ -174,7 +183,8 @@ void render(void) {
     while (iter != object_windows.end()) {
         bool open = true;
 
-        ImGui::SetNextWindowSize(DEFAULT_WINDOW_SIZE, ImGuiCond_FirstUseEver);
+        static const auto default_window_size = get_default_object_window_size();
+        ImGui::SetNextWindowSize(default_window_size, ImGuiCond_FirstUseEver);
         if (ImGui::Begin(iter->get_id().c_str(), &open,
                          ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar)) {
             iter->draw();
