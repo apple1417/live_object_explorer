@@ -25,5 +25,5 @@ Based on [unrealsdk](https://github.com/bl-sdk/unrealsdk), supports everything i
      dump a class object instead, search for `Class`, and select it from the results list.
 
 
-If needed, you can adjust a few settings via the `unrealsdk.toml`. The default settings should work
-fine in most cases. See [`supported_settings.toml`](supported_settings.toml) for more.
+If needed, you can adjust a few settings via the `unrealsdk.user.toml`. The default settings should
+work fine in most cases. See [`supported_settings.toml`](supported_settings.toml) for more.

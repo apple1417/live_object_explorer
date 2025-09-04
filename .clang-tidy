@@ -24,6 +24,7 @@ Checks: >
     performance-*,
     -performance-no-int-to-ptr,
     portability-*,
+    -portability-template-virtual-member-function,
     readability-*,
     -readability-qualified-auto,
 

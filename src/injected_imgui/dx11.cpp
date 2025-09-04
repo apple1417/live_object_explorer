@@ -283,7 +283,7 @@ bool hook(void) {
         }
     }};
 
-    uintptr_t* swap_chain_vftable = *reinterpret_cast<uintptr_t**>(swap_chain);
+    const uintptr_t* const swap_chain_vftable = *reinterpret_cast<uintptr_t**>(swap_chain);
     unrealsdk::memory::detour(swap_chain_vftable[SWAP_CHAIN_PRESENT_VF_INDEX],
                               &swap_chain_present_hook, &original_swap_chain_present,
                               SWAP_CHAIN_PRESENT_NAME);

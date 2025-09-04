@@ -188,7 +188,7 @@ bool hook(void) {
         }
     }};
 
-    uintptr_t* device_vftable = *reinterpret_cast<uintptr_t**>(device);
+    const uintptr_t* const device_vftable = *reinterpret_cast<uintptr_t**>(device);
     unrealsdk::memory::detour(device_vftable[DEVICE_END_SCENE_VF_INDEX], &device_end_scene_hook,
                               &original_device_end_scene, DEVICE_END_SCENE_NAME);
 

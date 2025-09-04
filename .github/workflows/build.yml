@@ -12,10 +12,6 @@ on:
         type: string
         required: false
 
-env:
-  # Limit which presets make artifacts
-  ALLOWED_ARTIFACT_PRESETS: "msvc-release;"
-
 jobs:
   build-windows:
     runs-on: windows-latest
@@ -55,7 +51,6 @@ jobs:
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
-      if: inputs.new-release-tag == '' || contains(env.ALLOWED_ARTIFACT_PRESETS, matrix.preset)
       with:
         name: ${{ matrix.preset }}
         path: out/install/${{ matrix.preset }}/live_object_explorer.dll
@@ -114,9 +109,6 @@ jobs:
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
-      if: >
-        inputs.new-release-tag == ''
-        || contains(env.ALLOWED_ARTIFACT_PRESETS, matrix.toolchain.preset)
       with:
         name: ${{ matrix.toolchain.preset }}
         path: out/install/${{ matrix.toolchain.preset }}/live_object_explorer.dll
@@ -265,10 +257,20 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Download artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
+      with:
+        name: msvc-oak-release
+        path: releases/live_object_explorer_oak
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v5
+      with:
+        name: msvc-willow-release
+        path: releases/live_object_explorer_willow
 
     - name: Re-zip artifacts
       run: |
+        cd releases
         find . -mindepth 1 -maxdepth 1 -type d | xargs -I{} -- bash -c "cd {}; zip -r '../{}.zip' ."
 
     - name: Create new release tag
@@ -280,7 +282,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ inputs.new-release-tag }}
-        files: "*.zip"
+        files: releases/*.zip
         fail_on_unmatched_files: true
         draft: true
         generate_release_notes: true

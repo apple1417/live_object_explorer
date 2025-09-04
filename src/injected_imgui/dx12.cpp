@@ -143,6 +143,7 @@ bool ensure_initialized(IDXGISwapChain3* swap_chain) {
     }
 
     {
+        // NOLINTNEXTLINE(misc-const-correctness)
         ID3D12CommandAllocator* allocator{};
         if (auto ret = dx::device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
                                                           IID_ID3D12CommandAllocator,
@@ -494,11 +495,12 @@ bool hook(void) {
         }
     }};
 
-    uintptr_t* command_queue_vftable = *reinterpret_cast<uintptr_t**>(hook_command_queue);
+    const uintptr_t* const command_queue_vftable =
+        *reinterpret_cast<uintptr_t**>(hook_command_queue);
     unrealsdk::memory::detour(command_queue_vftable[CMD_QUEUE_EXEC_VF_IDX], &cmd_queue_exec_hook,
                               &original_cmd_queue_exec, CMD_QUEUE_EXEC_NAME);
 
-    uintptr_t* swap_chain_vftable = *reinterpret_cast<uintptr_t**>(swap_chain);
+    const uintptr_t* const swap_chain_vftable = *reinterpret_cast<uintptr_t**>(swap_chain);
     unrealsdk::memory::detour(swap_chain_vftable[SWAP_CHAIN_PRESENT_VF_INDEX],
                               &swap_chain_present_hook, &original_swap_chain_present,
                               SWAP_CHAIN_PRESENT_NAME);
