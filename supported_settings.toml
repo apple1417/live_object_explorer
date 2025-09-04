@@ -1,0 +1,20 @@
+[live_object_explorer]
+# Which graphics api to try hook.
+# One of "dx9", "dx11", or "dx12" (case sensitive), or leave undefined (the default) to autodetect.
+api = ""
+
+# The name of the console command which opens the explorer window.
+command = "explore"
+
+# Which imgui theme to apply.
+# One of "dark", "light", or "classic" (case sensitive)
+theme = "dark"
+
+# The default size to use for each opened object window.
+# While the search window persists its size, object windows do not, so this lets you adjust it.
+default_window_size = { x = 600, y = 600 }
+
+# Workaround for an issue where colours get garbled and several textures get a diagonal seam.
+# This is very noticeable on the titlebar, the scrollbar, the resize column, and any disabled text.
+# The issue only seems to happen to people running dx12 on an AMD gpu - hence the name.
+amd_dx12_hack = false
