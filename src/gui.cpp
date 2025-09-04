@@ -3,11 +3,19 @@
 #include "components/abstract.h"
 #include "object_window.h"
 
+#include "version.inl"
+
 using namespace unrealsdk::unreal;
 
 namespace live_object_explorer::gui {
 
 namespace {
+
+const constexpr auto GIT_HASH_CHARS = 8;
+const std::string TITLE_STR = std::format("Live Object Explorer (v{}, {}{})",
+                                          PROJECT_VERSION_MAJOR,
+                                          std::string_view(GIT_HEAD_SHA1).substr(0, GIT_HASH_CHARS),
+                                          GIT_IS_DIRTY ? ", dirty" : "");
 
 bool search_window_open = false;
 
@@ -83,7 +91,7 @@ void draw_search_window(void) {
 
     const constexpr auto default_window_size = ImVec2{500, 600};
     ImGui::SetNextWindowSize(default_window_size, ImGuiCond_FirstUseEver);
-    if (ImGui::Begin("Live Object Explorer", &search_window_open)) {
+    if (ImGui::Begin(TITLE_STR.c_str(), &search_window_open)) {
         auto text_size = ImGui::CalcTextSize("Search");
         auto rhs_width = text_size.x + (2 * ImGui::GetStyle().ItemSpacing.x);
         // Assume the filter box height is the same as the general text height

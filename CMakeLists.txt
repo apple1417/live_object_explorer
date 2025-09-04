@@ -51,9 +51,15 @@ target_include_directories(imgui PUBLIC "libs/imgui" "libs/imgui/backends")
 set(UNREALSDK_SHARED True)
 add_subdirectory(libs/unrealsdk EXCLUDE_FROM_ALL)
 
+set(CONFIGURE_FILES_DIR "${CMAKE_CURRENT_BINARY_DIR}/configure")
+
+set(GIT_PRE_CONFIGURE_FILE "src/version.inl.in")
+set(GIT_POST_CONFIGURE_FILE "${CONFIGURE_FILES_DIR}/version.inl")
+include(common_cmake/git_watcher.cmake)
+
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS "src/*.cpp" "src/*.h")
-target_sources(live_object_explorer PUBLIC ${sources})
-target_include_directories(live_object_explorer PUBLIC "src")
+target_sources(live_object_explorer PUBLIC ${sources} "src/versioninfo.rc")
+target_include_directories(live_object_explorer PUBLIC "src" "${CONFIGURE_FILES_DIR}")
 
 target_precompile_headers(live_object_explorer PUBLIC "src/pch.h")
 target_link_libraries(live_object_explorer PUBLIC
