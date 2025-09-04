@@ -35,11 +35,7 @@ void object_link(const std::string& text, UObject* obj) {
         ImGui::TextDisabled("%s", text.c_str());
     } else {
         if (ImGui::TextLink(text.c_str())) {
-            if (ImGui::GetIO().KeyShift) {
-                copy_to_clipboard(text);
-            } else {
-                gui::open_object_window(obj);
-            }
+            gui::open_object_window(obj);
         }
         if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && ImGui::IsItemHovered()) {
             copy_to_clipboard(text);
@@ -49,13 +45,9 @@ void object_link(const std::string& text, UObject* obj) {
 void object_link(const std::string& text,
                  const std::function<unrealsdk::unreal::UObject*(void)>& obj_getter) {
     if (ImGui::TextLink(text.c_str())) {
-        if (ImGui::GetIO().KeyShift) {
-            copy_to_clipboard(text);
-        } else {
-            auto obj = obj_getter();
-            if (obj != nullptr) {
-                gui::open_object_window(obj);
-            }
+        auto obj = obj_getter();
+        if (obj != nullptr) {
+            gui::open_object_window(obj);
         }
     }
     if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && ImGui::IsItemHovered()) {
