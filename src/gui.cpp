@@ -12,7 +12,7 @@ namespace live_object_explorer::gui {
 namespace {
 
 const constexpr auto GIT_HASH_CHARS = 8;
-const std::string TITLE_STR = std::format("Live Object Explorer (v{}, {}{})",
+const std::string TITLE_STR = std::format("Live Object Explorer (v{}, {}{})###Live Object Explorer",
                                           PROJECT_VERSION_MAJOR,
                                           std::string_view(GIT_HEAD_SHA1).substr(0, GIT_HASH_CHARS),
                                           GIT_IS_DIRTY ? ", dirty" : "");
