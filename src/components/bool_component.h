@@ -8,7 +8,7 @@ namespace live_object_explorer {
 
 class BoolComponent : public AbstractComponent {
    public:
-    using field_mask_type = unrealsdk::unreal::UBoolProperty::field_mask_type;
+    using field_mask_type = unrealsdk::unreal::ZBoolProperty::field_mask_type;
 
    protected:
     field_mask_type* addr;

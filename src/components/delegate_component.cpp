@@ -108,7 +108,7 @@ void DelegateComponent::draw(const ObjectWindowSettings& settings,
     if (this->addr->func_name != this->last_func_name) {
         this->last_func_name = this->addr->func_name;
 
-        if (this->last_func_name == FName{0, 0}) {
+        if (this->last_func_name == FName{}) {
             this->cached_func_name = "";
         } else {
             this->cached_func_name = this->last_func_name;

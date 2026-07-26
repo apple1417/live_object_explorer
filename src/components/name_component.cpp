@@ -8,7 +8,10 @@ using namespace unrealsdk::unreal;
 namespace live_object_explorer {
 
 NameComponent::NameComponent(std::string&& name, FName* addr)
-    : AbstractComponent(std::move(name)), addr(addr), last_name(-1, -1), pending_edit(false) {}
+    : AbstractComponent(std::move(name)),
+      addr(addr),
+      last_name(static_cast<uint32_t>(-1), static_cast<uint32_t>(-1)),
+      pending_edit(false) {}
 
 void NameComponent::draw(const ObjectWindowSettings& settings,
                          ForceExpandTree /*expand_children*/,
@@ -48,7 +51,7 @@ void NameComponent::draw(const ObjectWindowSettings& settings,
 
         // Invalidate last and get a new value next loop, to catch some edge cases like the empty
         // string becoming 'None', so not updating cached_str if it was already 'None' before
-        this->last_name = FName{-1, -1};
+        this->last_name = FName{static_cast<uint32_t>(-1), static_cast<uint32_t>(-1)};
 
     } else if (settings.editable) {
         if (this->pending_edit) {

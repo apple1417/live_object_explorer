@@ -30,7 +30,7 @@ void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& prop_comp
  */
 void insert_component_array(std::vector<std::unique_ptr<AbstractComponent>>& prop_components,
                             unrealsdk::unreal::TArray<void>* arr,
-                            unrealsdk::unreal::UProperty* inner_prop,
+                            unrealsdk::unreal::ZProperty* inner_prop,
                             size_t idx);
 
 }  // namespace live_object_explorer

@@ -10,7 +10,7 @@ namespace live_object_explorer {
 
 ArrayComponent::ArrayComponent(std::string&& name,
                                unrealsdk::unreal::TArray<void>* addr,
-                               unrealsdk::unreal::UProperty* inner_prop)
+                               unrealsdk::unreal::ZProperty* inner_prop)
     : AbstractComponent(std::move(name)),
       addr(addr),
       last_data(nullptr),
@@ -29,7 +29,7 @@ namespace {
  */
 void update_components_list(std::vector<std::unique_ptr<AbstractComponent>>& components,
                             TArray<void>* addr,
-                            UProperty* inner_prop,
+                            ZProperty* inner_prop,
                             void** last_data) {
     // If the array data changed, we need to remove all components, since some may keep pointers
     // to the now invalid data
@@ -63,7 +63,7 @@ void update_components_list(std::vector<std::unique_ptr<AbstractComponent>>& com
  */
 void delete_array_indexes(std::vector<size_t>& indexes_to_remove,
                           TArray<void>* addr,
-                          UProperty* inner_prop) {
+                          ZProperty* inner_prop) {
     if (indexes_to_remove.empty()) {
         return;
     }

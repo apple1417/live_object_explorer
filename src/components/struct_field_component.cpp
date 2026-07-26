@@ -9,7 +9,7 @@ namespace live_object_explorer {
 
 namespace {
 
-using property_flags_type = unrealsdk::unreal::UProperty::property_flags_type;
+using property_flags_type = unrealsdk::unreal::ZProperty::property_flags_type;
 
 /**
  * @brief Appends function flags to the given property name.
@@ -18,14 +18,14 @@ using property_flags_type = unrealsdk::unreal::UProperty::property_flags_type;
  * @param flags The flags to check through.
  */
 void append_function_flags(std::string& name, property_flags_type flags) {
-    if ((flags & UProperty::PROP_FLAG_PARAM) == 0) {
+    if ((flags & ZProperty::PROP_FLAG_PARAM) == 0) {
         return;
     }
 
-    const bool is_return = (flags & UProperty::PROP_FLAG_RETURN) != 0;
-    const bool is_out = (flags & UProperty::PROP_FLAG_OUT) != 0;
+    const bool is_return = (flags & ZProperty::PROP_FLAG_RETURN) != 0;
+    const bool is_out = (flags & ZProperty::PROP_FLAG_OUT) != 0;
 #if UNREALSDK_FLAVOUR == UNREALSDK_FLAVOUR_WILLOW
-    const bool is_optional = (flags & UProperty::PROP_FLAG_OPTIONAL) != 0;
+    const bool is_optional = (flags & ZProperty::PROP_FLAG_OPTIONAL) != 0;
 #else
     const bool is_optional = false;
 #endif

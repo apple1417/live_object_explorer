@@ -103,7 +103,7 @@ void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& c
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UProperty* obj) {
+                              ZProperty* obj) {
     append_scalar_component(components, "ArrayDim", &obj->ArrayDim());
     append_scalar_component(components, "ElementSize", &obj->ElementSize());
     append_scalar_component(components, "PropertyFlags", &obj->PropertyFlags());
@@ -128,26 +128,26 @@ void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& c
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UArrayProperty* obj) {
+                              ZArrayProperty* obj) {
     append_object_component(components, "Inner", &obj->Inner());
 
-    insert_native_components<UProperty>(components, obj);
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UBoolProperty* obj) {
+                              ZBoolProperty* obj) {
     append_scalar_component(components, "FieldMask", &obj->FieldMask());
 
-    insert_native_components<UProperty>(components, obj);
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UByteProperty* obj) {
+                              ZByteProperty* obj) {
     append_object_component(components, "Enum", &obj->Enum());
 
-    insert_native_components<UProperty>(components, obj);
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
@@ -161,31 +161,31 @@ void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& c
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UDelegateProperty* obj) {
+                              ZDelegateProperty* obj) {
     append_object_component(components, "Signature", &obj->Signature());
 
-    insert_native_components<UProperty>(components, obj);
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UDoubleProperty* obj) {
-    insert_native_components<UProperty>(components, obj);
+                              ZDoubleProperty* obj) {
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UEnumProperty* obj) {
+                              ZEnumProperty* obj) {
     append_object_component(components, "UnderlyingProp", &obj->UnderlyingProp());
     append_object_component(components, "Enum", &obj->Enum());
 
-    insert_native_components<UProperty>(components, obj);
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UFloatProperty* obj) {
-    insert_native_components<UProperty>(components, obj);
+                              ZFloatProperty* obj) {
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
@@ -201,56 +201,56 @@ void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& c
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UInt16Property* obj) {
-    insert_native_components<UProperty>(components, obj);
+                              ZInt16Property* obj) {
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UInt64Property* obj) {
-    insert_native_components<UProperty>(components, obj);
+                              ZInt64Property* obj) {
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UInt8Property* obj) {
-    insert_native_components<UProperty>(components, obj);
+                              ZInt8Property* obj) {
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UInterfaceProperty* obj) {
+                              ZInterfaceProperty* obj) {
     append_object_component(components, "InterfaceClass", &obj->InterfaceClass());
 
-    insert_native_components<UProperty>(components, obj);
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UIntProperty* obj) {
-    insert_native_components<UProperty>(components, obj);
+                              ZIntProperty* obj) {
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UMulticastDelegateProperty* obj) {
+                              ZMulticastDelegateProperty* obj) {
     append_object_component(components, "Signature", &obj->Signature());
 
-    insert_native_components<UProperty>(components, obj);
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UNameProperty* obj) {
-    insert_native_components<UProperty>(components, obj);
+                              ZNameProperty* obj) {
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UObjectProperty* obj) {
+                              ZObjectProperty* obj) {
     append_object_component(components, "PropertyClass", &obj->PropertyClass());
 
-    insert_native_components<UProperty>(components, obj);
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
@@ -263,40 +263,40 @@ void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& c
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UStrProperty* obj) {
-    insert_native_components<UProperty>(components, obj);
+                              ZStrProperty* obj) {
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UStructProperty* obj) {
+                              ZStructProperty* obj) {
     append_object_component(components, "Struct", &obj->Struct());
 
-    insert_native_components<UProperty>(components, obj);
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UTextProperty* obj) {
-    insert_native_components<UProperty>(components, obj);
+                              ZTextProperty* obj) {
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UUInt16Property* obj) {
-    insert_native_components<UProperty>(components, obj);
+                              ZUInt16Property* obj) {
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UUInt32Property* obj) {
-    insert_native_components<UProperty>(components, obj);
+                              ZUInt32Property* obj) {
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UUInt64Property* obj) {
-    insert_native_components<UProperty>(components, obj);
+                              ZUInt64Property* obj) {
+    insert_native_components<ZProperty>(components, obj);
 }
 
 // =================================================================================================
@@ -309,74 +309,93 @@ void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& c
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UByteAttributeProperty* obj) {
+                              ZByteAttributeProperty* obj) {
     append_object_component(components, "ModifierStackProperty", &obj->ModifierStackProperty());
     append_object_component(components, "OtherAttributeProperty", &obj->OtherAttributeProperty());
 
-    insert_native_components<UByteProperty>(components, obj);
+    insert_native_components<ZByteProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UClassProperty* obj) {
+                              ZClassProperty* obj) {
     append_object_component(components, "MetaClass", &obj->MetaClass());
 
-    insert_native_components<UObjectProperty>(components, obj);
+    insert_native_components<ZObjectProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UComponentProperty* obj) {
-    insert_native_components<UObjectProperty>(components, obj);
+                              ZComponentProperty* obj) {
+    insert_native_components<ZObjectProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UFloatAttributeProperty* obj) {
+                              ZFloatAttributeProperty* obj) {
     append_object_component(components, "ModifierStackProperty", &obj->ModifierStackProperty());
     append_object_component(components, "OtherAttributeProperty", &obj->OtherAttributeProperty());
 
-    insert_native_components<UFloatProperty>(components, obj);
+    insert_native_components<ZFloatProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UIntAttributeProperty* obj) {
+                              ZIntAttributeProperty* obj) {
     append_object_component(components, "ModifierStackProperty", &obj->ModifierStackProperty());
     append_object_component(components, "OtherAttributeProperty", &obj->OtherAttributeProperty());
 
-    insert_native_components<UIntProperty>(components, obj);
+    insert_native_components<ZIntProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              ULazyObjectProperty* obj) {
-    insert_native_components<UObjectProperty>(components, obj);
+                              ZLazyObjectProperty* obj) {
+    insert_native_components<ZObjectProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              USoftObjectProperty* obj) {
-    insert_native_components<UObjectProperty>(components, obj);
+                              ZSoftObjectProperty* obj) {
+    insert_native_components<ZObjectProperty>(components, obj);
 }
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              UWeakObjectProperty* obj) {
-    insert_native_components<UObjectProperty>(components, obj);
+                              ZWeakObjectProperty* obj) {
+    insert_native_components<ZObjectProperty>(components, obj);
 }
 
 // =================================================================================================
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              USoftClassProperty* obj) {
+                              ZSoftClassProperty* obj) {
     append_object_component(components, "MetaClass", &obj->MetaClass());
 
-    insert_native_components<USoftObjectProperty>(components, obj);
+    insert_native_components<ZSoftObjectProperty>(components, obj);
 }
 
 // =================================================================================================
+
+// TODO TEMPORARY
+template <>
+void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                              ZGameDataHandleProperty* obj) {
+    insert_native_components<ZProperty>(components, obj);
+}
+
+template <>
+void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                              ZGbxDefPtrProperty* obj) {
+    insert_native_components<ZProperty>(components, obj);
+}
+
+template <>
+void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                              ZGbxInlineStructProperty* obj) {
+    insert_native_components<ZStructProperty>(components, obj);
+}
 
 #ifdef __clang__
 #pragma clang diagnostic pop

@@ -10,7 +10,7 @@ class ArrayComponent : public AbstractComponent {
    protected:
     unrealsdk::unreal::TArray<void>* addr;
     void* last_data;
-    unrealsdk::unreal::UProperty* inner_prop;
+    unrealsdk::unreal::ZProperty* inner_prop;
     std::vector<std::unique_ptr<AbstractComponent>> components;
     bool was_force_closed;
 
@@ -24,7 +24,7 @@ class ArrayComponent : public AbstractComponent {
      */
     ArrayComponent(std::string&& name,
                    unrealsdk::unreal::TArray<void>* addr,
-                   unrealsdk::unreal::UProperty* inner_prop);
+                   unrealsdk::unreal::ZProperty* inner_prop);
 
     ~ArrayComponent() override = default;
     void draw(const ObjectWindowSettings& settings,

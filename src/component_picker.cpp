@@ -24,7 +24,7 @@ namespace live_object_explorer {
 namespace {
 
 /**
- * @brief Adds a new component for any non-UProperty- generally fields, hence the name.
+ * @brief Adds a new component for any non-ZProperty - generally fields, hence the name.
  *
  * @tparam T The type of the field. May be void to deliberately call the fallback.
  * @param components The list of components to add to.
@@ -32,7 +32,7 @@ namespace {
  * @param name The name to use for this component.
  */
 template <typename T>
-    requires std::negation_v<std::is_base_of<UProperty, T>>
+    requires std::negation_v<std::is_base_of<ZProperty, T>>
 void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
                             T* field,
                             std::string&& name) {
@@ -42,7 +42,7 @@ void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& com
 }
 
 /**
- * @brief Adds a new component for a UProperty.
+ * @brief Adds a new component for a ZProperty.
  *
  * @tparam T The type of the property. May be void to deliberately call the fallback.
  * @param components The list of components to add to.
@@ -51,7 +51,7 @@ void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& com
  * @param addr The address of the value behind this component.
  */
 template <typename T>
-    requires std::disjunction_v<std::is_base_of<UProperty, T>, std::is_void<T>>
+    requires std::disjunction_v<std::is_base_of<ZProperty, T>, std::is_void<T>>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
                                T* prop,
                                std::string&& name,
@@ -68,7 +68,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UArrayProperty* prop,
+                               ZArrayProperty* prop,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(std::make_unique<ArrayComponent>(
@@ -84,7 +84,7 @@ void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& com
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UBoolProperty* prop,
+                               ZBoolProperty* prop,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(std::make_unique<BoolComponent>(
@@ -94,7 +94,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UByteAttributeProperty* prop,
+                               ZByteAttributeProperty* prop,
                                std::string&& name,
                                uintptr_t addr) {
     auto uenum = prop->Enum();
@@ -109,7 +109,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UByteProperty* prop,
+                               ZByteProperty* prop,
                                std::string&& name,
                                uintptr_t addr) {
     auto uenum = prop->Enum();
@@ -131,7 +131,7 @@ void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& com
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UClassProperty* prop,
+                               ZClassProperty* prop,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -141,7 +141,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UComponentProperty* prop,
+                               ZComponentProperty* prop,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(std::make_unique<ObjectComponent>(
@@ -157,7 +157,7 @@ void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& com
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UDelegateProperty* prop,
+                               ZDelegateProperty* prop,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(std::make_unique<DelegateComponent>(
@@ -166,7 +166,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UDoubleProperty* /*prop*/,
+                               ZDoubleProperty* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -182,12 +182,12 @@ void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& com
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UEnumProperty* prop,
+                               ZEnumProperty* prop,
                                std::string&& name,
                                uintptr_t addr) {
     using valid_underlying_types =
-        std::tuple<UInt8Property, UInt16Property, UIntProperty, UInt64Property, UByteProperty,
-                   UUInt16Property, UUInt32Property, UUInt64Property>;
+        std::tuple<ZInt8Property, ZInt16Property, ZIntProperty, ZInt64Property, ZByteProperty,
+                   ZUInt16Property, ZUInt32Property, ZUInt64Property>;
 
     auto uenum = prop->Enum();
     cast<cast_options<>::with_classes<valid_underlying_types>>(
@@ -209,7 +209,7 @@ void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& com
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UFloatAttributeProperty* /*prop*/,
+                               ZFloatAttributeProperty* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -218,7 +218,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UFloatProperty* /*prop*/,
+                               ZFloatProperty* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -234,7 +234,7 @@ void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& com
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UInt16Property* /*prop*/,
+                               ZInt16Property* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -243,7 +243,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UInt64Property* /*prop*/,
+                               ZInt64Property* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -252,7 +252,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UInt8Property* /*prop*/,
+                               ZInt8Property* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -261,7 +261,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UIntAttributeProperty* /*prop*/,
+                               ZIntAttributeProperty* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -270,7 +270,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UInterfaceProperty* prop,
+                               ZInterfaceProperty* prop,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(std::make_unique<InterfaceComponent>(
@@ -279,7 +279,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UIntProperty* /*prop*/,
+                               ZIntProperty* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -288,7 +288,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               ULazyObjectProperty* prop,
+                               ZLazyObjectProperty* prop,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(std::make_unique<LazyObjectComponent>(
@@ -297,7 +297,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UMulticastDelegateProperty* prop,
+                               ZMulticastDelegateProperty* prop,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(std::make_unique<MulticastDelegateComponent>(
@@ -306,7 +306,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UNameProperty* /*prop*/,
+                               ZNameProperty* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -322,7 +322,7 @@ void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& com
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UObjectProperty* prop,
+                               ZObjectProperty* prop,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(std::make_unique<ObjectComponent>(
@@ -331,7 +331,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UProperty* prop,
+                               ZProperty* prop,
                                std::string&& name,
                                uintptr_t addr) {
     // Just forward directly to the fallback
@@ -347,7 +347,7 @@ void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& com
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               USoftClassProperty* prop,
+                               ZSoftClassProperty* prop,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(std::make_unique<SoftClassComponent>(
@@ -357,7 +357,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               USoftObjectProperty* prop,
+                               ZSoftObjectProperty* prop,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(std::make_unique<SoftObjectComponent>(
@@ -366,7 +366,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UStrProperty* /*prop*/,
+                               ZStrProperty* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -382,7 +382,7 @@ void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& com
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UStructProperty* prop,
+                               ZStructProperty* prop,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -391,7 +391,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UTextProperty* /*prop*/,
+                               ZTextProperty* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -400,7 +400,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UUInt16Property* /*prop*/,
+                               ZUInt16Property* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -409,7 +409,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UUInt32Property* /*prop*/,
+                               ZUInt32Property* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -418,7 +418,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UUInt64Property* /*prop*/,
+                               ZUInt64Property* /*prop*/,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(
@@ -427,7 +427,7 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 
 template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                               UWeakObjectProperty* prop,
+                               ZWeakObjectProperty* prop,
                                std::string&& name,
                                uintptr_t addr) {
     components.emplace_back(std::make_unique<WeakObjectComponent>(
@@ -447,7 +447,7 @@ void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& prop_comp
     cast<cast_options<>::with_input<true>>(
         obj,
         [&prop_components, &field_components, base_addr]<typename T>(T* obj) {
-            if constexpr (std::is_base_of_v<UProperty, T>) {
+            if constexpr (std::is_base_of_v<ZProperty, T>) {
                 auto offset_internal = obj->Offset_Internal();
                 auto array_dim = obj->ArrayDim();
                 if (array_dim > 1) {
@@ -470,7 +470,7 @@ void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& prop_comp
         },
         [&prop_components, &field_components](UObject* obj) {
             // If the cast fails, still split by property or not
-            if (obj->is_instance(find_class<UProperty>())) {
+            if (obj->is_instance(find_class<ZProperty>())) {
                 // Use void to explicitly get the fallback. Address is ignored for this one.
                 insert_property_component<void>(prop_components, obj, (std::string)obj->Name(), 0);
             } else {
@@ -481,7 +481,7 @@ void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& prop_comp
 
 void insert_component_array(std::vector<std::unique_ptr<AbstractComponent>>& prop_components,
                             unrealsdk::unreal::TArray<void>* arr,
-                            unrealsdk::unreal::UProperty* inner_prop,
+                            unrealsdk::unreal::ZProperty* inner_prop,
                             size_t idx) {
     cast<cast_options<>::with_input<true>>(
         inner_prop,
@@ -491,7 +491,7 @@ void insert_component_array(std::vector<std::unique_ptr<AbstractComponent>>& pro
             insert_property_component<T>(prop_components, inner_prop, std::format("[{}]", idx),
                                          addr);
         },
-        [&prop_components, idx](UProperty* inner_prop) {
+        [&prop_components, idx](ZProperty* inner_prop) {
             insert_property_component<void>(prop_components, inner_prop, std::format("[{}]", idx),
                                             0);
         });
