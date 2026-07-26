@@ -12,12 +12,17 @@ class AbstractComponent;
  *
  * @param prop_components The list of components to add properties to.
  * @param field_components The list of components to add non-property fields to.
- * @param obj The object to add.
+ * @param obj The UObject to add.
+ * @param field The FField to add.
  * @param base_addr The base address of the object/struct this field is on.
  */
 void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& prop_components,
                       std::vector<std::unique_ptr<AbstractComponent>>& field_components,
                       unrealsdk::unreal::UObject* obj,
+                      uintptr_t base_addr);
+void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& prop_components,
+                      std::vector<std::unique_ptr<AbstractComponent>>& field_components,
+                      unrealsdk::unreal::FField* field,
                       uintptr_t base_addr);
 
 /**

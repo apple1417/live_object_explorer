@@ -65,6 +65,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND h_wnd,
 #include <unrealsdk/unreal/properties/zstructproperty.h>
 #include <unrealsdk/unreal/properties/ztextproperty.h>
 #include <unrealsdk/unreal/properties/zweakobjectproperty.h>
+#include <unrealsdk/unreal/structs/ffield.h>
 #include <unrealsdk/unreal/structs/fname.h>
 #include <unrealsdk/unreal/structs/fscriptdelegate.h>
 #include <unrealsdk/unreal/structs/fstring.h>

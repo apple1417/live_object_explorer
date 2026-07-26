@@ -23,6 +23,49 @@ namespace live_object_explorer {
 
 namespace {
 
+// ===================
+// Fallback components
+// ===================
+
+/**
+ * @brief Adds a fallback component for any unknown non-ZProperty - generally fields, hence the
+ * name.
+ *
+ * @tparam T The type of the field. May be void to deliberately call the fallback.
+ * @param components The list of components to add to.
+ * @param field The field to add.
+ * @param name The name to use for this component.
+ */
+template <typename T>
+    requires std::negation_v<std::is_base_of<ZProperty, T>>
+void insert_field_fallback(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                           T* field,
+                           std::string&& name) {
+    components.emplace_back(std::make_unique<ConstDisabledStrComponent>(
+        std::move(name), std::format("unrecognized field type {}", field->Class()->Name())));
+}
+
+/**
+ * @brief Adds a fallback component for any unknown ZProperty.
+ *
+ * @tparam T The type of the property. May be void to deliberately call the fallback.
+ * @param components The list of components to add to.
+ * @param prop The property to add.
+ * @param name The name to use for this component.
+ */
+template <typename T>
+    requires std::is_base_of_v<ZProperty, T>
+void insert_property_fallback(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                              T* prop,
+                              std::string&& name) {
+    components.emplace_back(std::make_unique<ConstDisabledStrComponent>(
+        std::move(name), std::format("unrecognized property type {}", prop->Class()->Name())));
+}
+
+// =========================================================================
+// Base components. Ideally these never fire, in favour of a specialization.
+// =========================================================================
+
 /**
  * @brief Adds a new component for any non-ZProperty - generally fields, hence the name.
  *
@@ -36,9 +79,7 @@ template <typename T>
 void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
                             T* field,
                             std::string&& name) {
-    components.emplace_back(std::make_unique<ConstDisabledStrComponent>(
-        std::move(name),
-        std::format("unrecognized field type {}", ((UObject*)field)->Class()->Name())));
+    insert_field_fallback(components, field, std::move(name));
 }
 
 /**
@@ -51,15 +92,17 @@ void insert_field_component(std::vector<std::unique_ptr<AbstractComponent>>& com
  * @param addr The address of the value behind this component.
  */
 template <typename T>
-    requires std::disjunction_v<std::is_base_of<ZProperty, T>, std::is_void<T>>
+    requires std::is_base_of_v<ZProperty, T>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
                                T* prop,
                                std::string&& name,
                                uintptr_t /*addr*/) {
-    components.emplace_back(std::make_unique<ConstDisabledStrComponent>(
-        std::move(name),
-        std::format("unrecognized property type {}", ((UObject*)prop)->Class()->Name())));
+    insert_property_fallback(components, prop, std::move(name));
 }
+
+// ====================
+// Per-class components
+// ====================
 
 #ifdef __clang__  // for clangd more than anything
 #pragma clang diagnostic push
@@ -333,9 +376,9 @@ template <>
 void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
                                ZProperty* prop,
                                std::string&& name,
-                               uintptr_t addr) {
+                               uintptr_t /*addr*/) {
     // Just forward directly to the fallback
-    insert_property_component<void>(components, prop, std::move(name), addr);
+    insert_property_fallback(components, prop, std::move(name));
 }
 
 template <>
@@ -438,12 +481,11 @@ void insert_property_component(std::vector<std::unique_ptr<AbstractComponent>>& 
 #pragma clang diagnostic pop
 #endif
 
-}  // namespace
-
-void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& prop_components,
-                      std::vector<std::unique_ptr<AbstractComponent>>& field_components,
-                      UObject* obj,
-                      uintptr_t base_addr) {
+template <typename InputType>
+void insert_component_impl(std::vector<std::unique_ptr<AbstractComponent>>& prop_components,
+                           std::vector<std::unique_ptr<AbstractComponent>>& field_components,
+                           InputType* obj,
+                           uintptr_t base_addr) {
     cast<cast_options<>::with_input<true>>(
         obj,
         [&prop_components, &field_components, base_addr]<typename T>(T* obj) {
@@ -461,22 +503,38 @@ void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& prop_comp
                 } else {
                     auto addr = base_addr + offset_internal;
 
-                    insert_property_component<T>(prop_components, obj, (std::string)obj->Name(),
-                                                 addr);
+                    insert_property_component<T>(prop_components, obj,
+                                                 static_cast<std::string>(obj->Name()), addr);
                 }
             } else {
-                insert_field_component(field_components, obj, (std::string)obj->Name());
+                insert_field_component(field_components, obj,
+                                       static_cast<std::string>(obj->Name()));
             }
         },
-        [&prop_components, &field_components](UObject* obj) {
+        [&prop_components, &field_components](InputType* obj) {
             // If the cast fails, still split by property or not
             if (obj->is_instance(find_class<ZProperty>())) {
-                // Use void to explicitly get the fallback. Address is ignored for this one.
-                insert_property_component<void>(prop_components, obj, (std::string)obj->Name(), 0);
+                insert_property_fallback(prop_components, reinterpret_cast<ZProperty*>(obj),
+                                         static_cast<std::string>(obj->Name()));
             } else {
-                insert_field_component<void>(field_components, obj, (std::string)obj->Name());
+                insert_field_fallback(field_components, obj, static_cast<std::string>(obj->Name()));
             }
         });
+}
+
+}  // namespace
+
+void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& prop_components,
+                      std::vector<std::unique_ptr<AbstractComponent>>& field_components,
+                      UObject* obj,
+                      uintptr_t base_addr) {
+    insert_component_impl(prop_components, field_components, obj, base_addr);
+}
+void insert_component(std::vector<std::unique_ptr<AbstractComponent>>& prop_components,
+                      std::vector<std::unique_ptr<AbstractComponent>>& field_components,
+                      FField* field,
+                      uintptr_t base_addr) {
+    insert_component_impl(prop_components, field_components, field, base_addr);
 }
 
 void insert_component_array(std::vector<std::unique_ptr<AbstractComponent>>& prop_components,
@@ -492,8 +550,7 @@ void insert_component_array(std::vector<std::unique_ptr<AbstractComponent>>& pro
                                          addr);
         },
         [&prop_components, idx](ZProperty* inner_prop) {
-            insert_property_component<void>(prop_components, inner_prop, std::format("[{}]", idx),
-                                            0);
+            insert_property_fallback(prop_components, inner_prop, std::format("[{}]", idx));
         });
 }
 

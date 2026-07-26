@@ -53,6 +53,13 @@ ObjectWindow::ObjectWindow(const FFieldVariant& var)
                 insert_component(prop_components, field_components, field,
                                  reinterpret_cast<uintptr_t>(obj));
             }
+
+#if UNREALSDK_PROPERTIES_ARE_FFIELD
+            for (auto prop = cls->ChildProperties(); prop != nullptr; prop = prop->Next()) {
+                insert_component(prop_components, field_components, prop,
+                                 reinterpret_cast<uintptr_t>(obj));
+            }
+#endif
         }
     }
 
