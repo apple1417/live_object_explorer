@@ -20,10 +20,14 @@ jobs:
       fail-fast: false
       matrix:
         preset:
-        - clang-oak-release
         - clang-willow-release
-        - msvc-oak-release
+        - clang-willow64-release
+        - clang-oak-release
+        - clang-oak2-release
         - msvc-willow-release
+        - msvc-willow64-release
+        - msvc-oak-release
+        - msvc-oak2-release
 
     steps:
     - name: Setup Clang
@@ -32,15 +36,15 @@ jobs:
 
     - name: Add MSVC to PATH
       if: startswith(matrix.preset, 'msvc')
-      uses: TheMrMilchmann/setup-msvc-dev@v3
+      uses: TheMrMilchmann/setup-msvc-dev@v4
       with:
-        arch: ${{ fromJSON('["x86", "x64"]')[contains(matrix.preset, 'oak')] }}
+        arch: ${{ fromJSON('["x64", "x86"]')[contains(matrix.preset, '-willow-')] }}
 
     - name: Setup CMake and Ninja
       uses: lukka/get-cmake@latest
 
     - name: Checkout repository and submodules
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
@@ -50,7 +54,7 @@ jobs:
         cmake --build out/build/${{ matrix.preset }} --target install
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ matrix.preset }}
         path: out/install/${{ matrix.preset }}/live_object_explorer.dll
@@ -64,26 +68,37 @@ jobs:
         toolchain:
           - preset: clang-cross-willow-release
             container: clang-cross
+          - preset: clang-cross-willow64-release
+            container: clang-cross
           - preset: clang-cross-oak-release
             container: clang-cross
-          # Temporarily disabled since libc++ doesn't support std::views::enumerate yet
-          # - preset: llvm-mingw-willow-release
-          #   container: llvm-mingw
-          # - preset: llvm-mingw-oak-release
-          #   container: llvm-mingw
+          - preset: clang-cross-oak2-release
+            container: clang-cross
+          - preset: llvm-mingw-willow-release
+            container: llvm-mingw
+          - preset: llvm-mingw-willow64-release
+            container: llvm-mingw
+          - preset: llvm-mingw-oak2-release
+            container: llvm-mingw
+          - preset: llvm-mingw-oak-release
+            container: llvm-mingw
           - preset: mingw-willow-release
+            container: mingw
+          - preset: mingw-willow64-release
+            container: mingw
+          - preset: mingw-oak2-release
             container: mingw
           - preset: mingw-oak-release
             container: mingw
 
     steps:
     - name: Checkout repository and submodules
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
     - name: Login to GitHub Container Registry
-      uses: docker/login-action@v2
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
@@ -108,7 +123,7 @@ jobs:
           cmake --build out/build/${{ matrix.toolchain.preset }} --target install
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ matrix.toolchain.preset }}
         path: out/install/${{ matrix.toolchain.preset }}/live_object_explorer.dll
@@ -122,8 +137,10 @@ jobs:
       fail-fast: false
       matrix:
         preset:
-        - clang-oak-release
         - clang-willow-release
+        - clang-willow64-release
+        - clang-oak-release
+        - clang-oak2-release
 
     steps:
     - name: Setup Clang
@@ -138,7 +155,7 @@ jobs:
       run: pip install pyyaml
 
     - name: Checkout repository and submodules
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
@@ -172,7 +189,7 @@ jobs:
       uses: egor-tensin/setup-clang@v1
 
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Run clang-format
       run: |
@@ -190,7 +207,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
 
     - name: Check spelling
       uses: crate-ci/typos@master
@@ -216,7 +233,7 @@ jobs:
 
     steps:
     - name: Download artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
 
     - name: Re-zip artifacts
       run: |
@@ -253,20 +270,29 @@ jobs:
       contents: write
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    - name: Download artifacts
+      uses: actions/download-artifact@v8
+      with:
+        name: msvc-willow-release
+        path: releases/live_object_explorer_willow
 
     - name: Download artifacts
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v8
+      with:
+        name: msvc-willow64-release
+        path: releases/live_object_explorer_willow64
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v8
       with:
         name: msvc-oak-release
         path: releases/live_object_explorer_oak
 
     - name: Download artifacts
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v8
       with:
-        name: msvc-willow-release
-        path: releases/live_object_explorer_willow
+        name: msvc-oak2-release
+        path: releases/live_object_explorer_oak2
 
     - name: Re-zip artifacts
       run: |

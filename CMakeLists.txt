@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(live_object_explorer VERSION 1)
+project(live_object_explorer VERSION 2)
 
 add_library(live_object_explorer SHARED)
 
