@@ -22,7 +22,7 @@ namespace {
  * @param obj Pointer to the object pointer to append.
  */
 template <typename T>
-    requires std::is_base_of_v<UObject, T>
+    requires std::is_base_of_v<UObject, T> || std::is_base_of_v<FField, T>
 void append_object_component(std::vector<std::unique_ptr<AbstractComponent>>& components,
                              std::string&& name,
                              T** obj) {
@@ -59,6 +59,27 @@ void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& c
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-function"
 #endif
+
+// =================================================================================================
+
+template <>
+#ifdef __MINGW32__
+[[gnu::unused]]  // TODO OAK2
+#endif
+void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                              FFieldClass* obj) {
+    components.emplace_back(std::make_unique<NameComponent>("Name", &obj->Name()));
+    // TODO OAK2: SuperField
+}
+
+template <>
+void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                              FField* obj) {
+    // TODO OAK2: Class
+    // TODO OAK2: Owner
+    append_object_component(components, "Next", &obj->Next());
+    components.emplace_back(std::make_unique<NameComponent>("Name", &obj->Name()));
+}
 
 // =================================================================================================
 
@@ -110,7 +131,11 @@ void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& c
     append_scalar_component(components, "Offset_Internal", &obj->Offset_Internal());
     append_object_component(components, "PropertyLinkNext", &obj->PropertyLinkNext());
 
+#if UNREALSDK_PROPERTIES_ARE_FFIELD
+    insert_native_components<FField>(components, obj);
+#else
     insert_native_components<UField>(components, obj);
+#endif
 }
 
 template <>
@@ -197,6 +222,22 @@ void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& c
     append_scalar_component(components, "ReturnValueOffset", &obj->ReturnValueOffset());
 
     insert_native_components<UStruct>(components, obj);
+}
+
+template <>
+void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                              ZGameDataHandleProperty* obj) {
+    append_scalar_component(components, "TypeHandle", &obj->TypeHandle());
+
+    insert_native_components<ZProperty>(components, obj);
+}
+
+template <>
+void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                              ZGbxDefPtrProperty* obj) {
+    append_object_component(components, "Struct", &obj->Struct());
+
+    insert_native_components<ZProperty>(components, obj);
 }
 
 template <>
@@ -341,6 +382,14 @@ void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& c
 
 template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
+                              ZGbxInlineStructProperty* obj) {
+    append_object_component(components, "MetaStruct", &obj->MetaStruct());
+
+    insert_native_components<ZStructProperty>(components, obj);
+}
+
+template <>
+void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
                               ZIntAttributeProperty* obj) {
     append_object_component(components, "ModifierStackProperty", &obj->ModifierStackProperty());
     append_object_component(components, "OtherAttributeProperty", &obj->OtherAttributeProperty());
@@ -377,29 +426,6 @@ void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& c
 }
 
 // =================================================================================================
-
-// TODO TEMPORARY
-template <>
-void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& /*components*/,
-                              FField* /*obj*/) {}
-
-template <>
-void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              ZGameDataHandleProperty* obj) {
-    insert_native_components<ZProperty>(components, obj);
-}
-
-template <>
-void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              ZGbxDefPtrProperty* obj) {
-    insert_native_components<ZProperty>(components, obj);
-}
-
-template <>
-void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                              ZGbxInlineStructProperty* obj) {
-    insert_native_components<ZStructProperty>(components, obj);
-}
 
 #ifdef __clang__
 #pragma clang diagnostic pop

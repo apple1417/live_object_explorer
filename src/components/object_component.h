@@ -9,8 +9,9 @@ namespace live_object_explorer {
 
 class ObjectComponent : public AbstractComponent {
    protected:
-    unrealsdk::unreal::UObject** addr;
-    unrealsdk::unreal::UClass* property_class;
+    void** addr;
+    unrealsdk::unreal::TFieldVariant<unrealsdk::unreal::FFieldClass, unrealsdk::unreal::UClass>
+        property_class;
 
     CachedObjLink cached_obj;
 
@@ -32,6 +33,9 @@ class ObjectComponent : public AbstractComponent {
     ObjectComponent(std::string&& name,
                     unrealsdk::unreal::UObject** addr,
                     unrealsdk::unreal::UClass* property_class);
+    ObjectComponent(std::string&& name,
+                    unrealsdk::unreal::FField** addr,
+                    unrealsdk::unreal::FFieldClass* property_class);
 
     ~ObjectComponent() override = default;
     void draw(const ObjectWindowSettings& settings,
@@ -45,7 +49,9 @@ class InterfaceComponent : public ObjectComponent {
     void try_set_to_object(unrealsdk::unreal::UObject* obj) override;
 
    public:
-    using ObjectComponent::ObjectComponent;
+    InterfaceComponent(std::string&& name,
+                       unrealsdk::unreal::UObject** addr,
+                       unrealsdk::unreal::UClass* property_class);
 
     ~InterfaceComponent() override = default;
 };

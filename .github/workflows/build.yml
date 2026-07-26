@@ -54,6 +54,9 @@ jobs:
         cmake --build out/build/${{ matrix.preset }} --target install
 
     - name: Upload Artifact
+      # Oak2 doesn't currently work, causes a gpu crash on launch. Want to make sure it keeps
+      # compiling, but not including it in the releases for now
+      if: "!contains(matrix.preset, 'oak2')"
       uses: actions/upload-artifact@v7
       with:
         name: ${{ matrix.preset }}
@@ -125,6 +128,7 @@ jobs:
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v7
+      if: "!contains(matrix.toolchain.preset, 'oak2')"
       with:
         name: ${{ matrix.toolchain.preset }}
         path: out/install/${{ matrix.toolchain.preset }}/live_object_explorer.dll
@@ -289,11 +293,11 @@ jobs:
         name: msvc-oak-release
         path: releases/live_object_explorer_oak
 
-    - name: Download artifacts
-      uses: actions/download-artifact@v8
-      with:
-        name: msvc-oak2-release
-        path: releases/live_object_explorer_oak2
+    # - name: Download artifacts
+    #   uses: actions/download-artifact@v8
+    #   with:
+    #     name: msvc-oak2-release
+    #     path: releases/live_object_explorer_oak2
 
     - name: Re-zip artifacts
       run: |

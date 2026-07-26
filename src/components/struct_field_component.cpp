@@ -97,7 +97,13 @@ void StructFieldComponent::draw(const ObjectWindowSettings& /*settings*/,
 
             ImGui::BulletText("%s", prop_info.name.c_str());
             ImGui::TableNextColumn();
-            object_link(prop_info.type, *prop_info.link);
+
+#if UNREALSDK_PROPERTIES_ARE_FFIELD
+            auto link = prop_info.link;
+#else
+            auto link = *prop_info.link;
+#endif
+            object_link(prop_info.type, link);
 
             ImGui::PopID();
         }
