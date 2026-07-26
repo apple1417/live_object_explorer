@@ -62,7 +62,6 @@ DWORD WINAPI startup_thread(LPVOID /*unused*/) {
         // NOLINTNEXTLINE(readability-identifier-length)
         ImGuiIO& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
         theme::apply();
