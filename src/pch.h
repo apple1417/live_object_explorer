@@ -71,6 +71,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND h_wnd,
 #include <unrealsdk/unreal/structs/ftext.h>
 #include <unrealsdk/unreal/structs/fweakobjectptr.h>
 #include <unrealsdk/unreal/structs/tarray.h>
+#include <unrealsdk/unreal/structs/tfieldvariant.h>
 #include <unrealsdk/unreal/structs/tpersistentobjectptr.h>
 #include <unrealsdk/unreal/wrappers/bound_function.h>
 #include <unrealsdk/unreal/wrappers/gobjects.h>

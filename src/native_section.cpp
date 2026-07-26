@@ -380,6 +380,10 @@ void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& c
 
 // TODO TEMPORARY
 template <>
+void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& /*components*/,
+                              FField* /*obj*/) {}
+
+template <>
 void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
                               ZGameDataHandleProperty* obj) {
     insert_native_components<ZProperty>(components, obj);
@@ -404,9 +408,16 @@ void insert_native_components(std::vector<std::unique_ptr<AbstractComponent>>& c
 }  // namespace
 
 void insert_all_native_components(std::vector<std::unique_ptr<AbstractComponent>>& components,
-                                  unrealsdk::unreal::UObject* obj) {
-    cast<cast_options<true, true>>(
-        obj, [&components]<typename T>(T* obj) { insert_native_components(components, obj); });
+                                  const FFieldVariant& var) {
+    if (var.is_ffield()) {
+        cast<cast_options<true, true>>(var.as_ffield(), [&components]<typename T>(T* obj) {
+            insert_native_components(components, obj);
+        });
+    } else {
+        cast<cast_options<true, true>>(var.as_uobject(), [&components]<typename T>(T* obj) {
+            insert_native_components(components, obj);
+        });
+    }
 }
 
 }  // namespace live_object_explorer

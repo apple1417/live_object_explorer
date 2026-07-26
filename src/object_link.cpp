@@ -7,12 +7,19 @@ using namespace unrealsdk::unreal;
 
 namespace live_object_explorer {
 
-std::string format_object_name(unrealsdk::unreal::UObject* obj) {
-    if (obj == nullptr) {
-        return std::string{NULL_OBJECT_NAME};
-    }
-    return std::format("{}'{}'", obj->Class()->Name(),
-                       unrealsdk::utils::narrow(obj->get_path_name()));
+std::string format_object_name(const FFieldVariant& var) {
+    std::string ret;
+    var.cast([&ret]<typename T>(const T* obj) {
+        if constexpr (std::is_same_v<T, std::nullptr_t>) {
+            ret = std::string{NULL_OBJECT_NAME};
+        } else if (obj == nullptr) {
+            ret = std::string{NULL_OBJECT_NAME};
+        } else {
+            ret = std::format("{}'{}'", obj->Class()->Name(),
+                              unrealsdk::utils::narrow(obj->get_path_name()));
+        }
+    });
+    return ret;
 }
 
 namespace {
@@ -30,20 +37,19 @@ void copy_to_clipboard(const std::string& text) {
 
 }  // namespace
 
-void object_link(const std::string& text, UObject* obj) {
-    if (obj == nullptr) {
+void object_link(const std::string& text, const FFieldVariant& var) {
+    if (var == nullptr) {
         ImGui::TextDisabled("%s", text.c_str());
     } else {
         if (ImGui::TextLink(text.c_str())) {
-            gui::open_object_window(obj);
+            gui::open_object_window(var);
         }
         if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) && ImGui::IsItemHovered()) {
             copy_to_clipboard(text);
         }
     }
 }
-void object_link(const std::string& text,
-                 const std::function<unrealsdk::unreal::UObject*(void)>& obj_getter) {
+void object_link(const std::string& text, const std::function<FFieldVariant(void)>& obj_getter) {
     if (ImGui::TextLink(text.c_str())) {
         auto obj = obj_getter();
         if (obj != nullptr) {
@@ -55,22 +61,25 @@ void object_link(const std::string& text,
     }
 }
 
-void CachedObjLink::update_obj(unrealsdk::unreal::UObject* obj) {
-    if (this->addr != reinterpret_cast<uintptr_t>(obj)) {
-        this->addr = reinterpret_cast<uintptr_t>(obj);
-        this->name = format_object_name(obj);
+void CachedObjLink::update_obj(const FFieldVariant& var) {
+    uintptr_t ptr{};
+    var.cast([&ptr]<typename T>(const T* obj) { ptr = reinterpret_cast<uintptr_t>(obj); });
+
+    if (this->addr != ptr) {
+        this->addr = ptr;
+        this->name = format_object_name(var);
 
         // Set editable name to the empty string when null so that we get the hint text instead
-        this->editable_name = obj == nullptr ? "" : this->name;
+        this->editable_name = var == nullptr ? "" : this->name;
         this->pending_edit = false;
     }
 }
 
-void CachedObjLink::draw(unrealsdk::unreal::UObject* obj) {
-    update_obj(obj);
+void CachedObjLink::draw(const FFieldVariant& var) {
+    update_obj(var);
 
     ImGui::PushID(this);
-    object_link(this->name, obj);
+    object_link(this->name, var);
     ImGui::PopID();
 }
 
@@ -105,12 +114,8 @@ std::pair<FName, std::wstring> split_class_obj_name(const std::string& text) {
 
 }  // namespace
 
-void CachedObjLink::draw_editable(unrealsdk::unreal::UObject* obj,
-                                  const std::function<void(unrealsdk::unreal::UObject*)>& setter) {
-    update_obj(obj);
-
-    ImGui::PushID(this);
-
+void CachedObjLink::draw_editable_object(UObject* /*obj*/,
+                                         const std::function<void(UObject*)>& setter) {
     // While an edit's pending, always use the active bg colour, so it's obvious if you go select
     // something else without submitting.
     if (this->pending_edit) {
@@ -169,7 +174,23 @@ void CachedObjLink::draw_editable(unrealsdk::unreal::UObject* obj,
             this->failed_to_set_msg.clear();
         }
     }
+}
 
+void CachedObjLink::draw_editable_field(FField* field,
+                                        const std::function<void(UObject*)>& /*setter*/) {
+    object_link(this->name, field);
+}
+
+void CachedObjLink::draw_editable(const FFieldVariant& var,
+                                  const std::function<void(UObject*)>& setter) {
+    update_obj(var);
+
+    ImGui::PushID(this);
+    if (var.is_ffield()) {
+        this->draw_editable_field(var.as_ffield(), setter);
+    } else {
+        this->draw_editable_object(var.as_uobject(), setter);
+    }
     ImGui::PopID();
 }
 

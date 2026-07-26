@@ -124,8 +124,15 @@ void DelegateComponent::draw(const ObjectWindowSettings& settings,
     } else if (current_obj == nullptr) {
         ImGui::TextDisabled("%s", NULL_OBJECT_NAME.c_str());
     } else {
-        object_link(this->cached_func_name,
-                    [&]() { return current_obj->Class()->find(this->last_func_name); });
+        object_link(this->cached_func_name, [&]() -> FFieldVariant {
+            auto ret = current_obj->Class()->find(this->last_func_name);
+            // Need to re-convert to a FFieldVariant, since find may return a stub, and it always
+            // returns a UStruct rather than a UObject
+            if (ret.is_ffield()) {
+                return ret.as_ffield();
+            }
+            return ret.as_uobject();
+        });
         ImGui::SameLine();
         ImGui::Text("on");
         ImGui::SameLine();

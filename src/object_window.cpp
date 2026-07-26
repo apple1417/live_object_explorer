@@ -17,28 +17,47 @@ std::atomic<size_t> object_window_counter = 0;
 
 }  // namespace
 
-ObjectWindow::ObjectWindow(UObject* obj)
-    : ptr(obj),
-      id(std::format("{}##object_{}",
-                     obj == nullptr ? "Unknown Object" : (std::string)obj->Name(),
-                     object_window_counter++)),
-      name(obj == nullptr ? "Unknown Object" : format_object_name(obj)) {
-    for (UStruct* cls = obj->Class(); cls != nullptr; cls = cls->SuperField()) {
-        this->prop_sections.emplace_back((std::string)cls->Name(),
-                                         decltype(ClassSection::components){});
-        this->field_sections.emplace_back((std::string)cls->Name(),
-                                          decltype(ClassSection::components){});
+ObjectWindow::ObjectWindow(const FFieldVariant& var)
+    : name(var == nullptr ? "Unknown Object" : format_object_name(var)) {
+    std::string id_suffix;
+    var.cast([&id_suffix]<typename T>(T* obj) {
+        if constexpr (std::is_same_v<T, std::nullptr_t>) {
+            id_suffix = "Unknown Object";
+        } else {
+            id_suffix = obj == nullptr ? "Unknown Object" : id_suffix = obj->Name();
+        }
+    });
+    this->id = std::format("{}##object_{}", id_suffix, object_window_counter++);
 
-        auto& prop_components = this->prop_sections.back().components;
-        auto& field_components = this->field_sections.back().components;
-        for (auto field = cls->Children(); field != nullptr; field = field->Next()) {
-            insert_component(prop_components, field_components, field,
-                             reinterpret_cast<uintptr_t>(obj));
+    if (var.is_ffield()) {
+        auto field = var.as_ffield();
+        this->ptr = nullptr;
+        this->ffield = field;
+
+        // FFields do not have their own properties, move straight on to the native ones.
+
+    } else {
+        auto obj = var.as_uobject();
+        this->ptr = obj;
+        this->ffield = nullptr;
+
+        for (UStruct* cls = obj->Class(); cls != nullptr; cls = cls->SuperField()) {
+            this->prop_sections.emplace_back((std::string)cls->Name(),
+                                             decltype(ClassSection::components){});
+            this->field_sections.emplace_back((std::string)cls->Name(),
+                                              decltype(ClassSection::components){});
+
+            auto& prop_components = this->prop_sections.back().components;
+            auto& field_components = this->field_sections.back().components;
+            for (auto field = cls->Children(); field != nullptr; field = field->Next()) {
+                insert_component(prop_components, field_components, field,
+                                 reinterpret_cast<uintptr_t>(obj));
+            }
         }
     }
 
     this->prop_sections.emplace_back("Native", decltype(ClassSection::components){});
-    insert_all_native_components(this->prop_sections.back().components, obj);
+    insert_all_native_components(this->prop_sections.back().components, var);
 }
 
 const std::string& ObjectWindow::get_id() const {

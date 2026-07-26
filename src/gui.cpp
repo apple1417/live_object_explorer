@@ -169,14 +169,14 @@ ImVec2 get_default_object_window_size(void) {
 
 }  // namespace
 
-void open_object_window(UObject* obj) {
-    object_windows.emplace_back(obj);
+void open_object_window(const FFieldVariant& var) {
+    object_windows.emplace_back(var);
     // Intentionally may dock to itself - seem to be required?
     dock_latest_obj_window(object_windows.front().get_id());
 }
 
-void open_object_window(UObject* obj, const std::string& parent_window_id) {
-    object_windows.emplace_back(obj);
+void open_object_window(const FFieldVariant& var, const std::string& parent_window_id) {
+    object_windows.emplace_back(var);
     dock_latest_obj_window(parent_window_id);
 }
 

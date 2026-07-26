@@ -20,9 +20,9 @@ class ObjectWindow {
     /**
      * @brief Parses the given object into a format ready to be drawn to screen.
      *
-     * @param obj The object to parse.
+     * @param var The object or field to parse.
      */
-    ObjectWindow(unrealsdk::unreal::UObject* obj);
+    ObjectWindow(const unrealsdk::unreal::FFieldVariant& var);
 
     ~ObjectWindow() = default;
 
@@ -43,7 +43,9 @@ class ObjectWindow {
     void draw(void);
 
    private:
+    // One of these is always null
     unrealsdk::unreal::WeakPointer ptr;
+    unrealsdk::unreal::FField* ffield;
 
     std::string id;
     std::string name;

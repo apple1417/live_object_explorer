@@ -32,12 +32,13 @@ void render(void);
 /**
  * @brief Opens a new object window.
  *
- * @param obj The object shown in the window.
+ * @param var The object shown in the window.
  * @param parent_window The id of the parent window to initially dock this to. Defaults to the first
  *                      open object window when not given.
  */
-void open_object_window(unrealsdk::unreal::UObject* obj);
-void open_object_window(unrealsdk::unreal::UObject* obj, const std::string& parent_window_id);
+void open_object_window(const unrealsdk::unreal::FFieldVariant& var);
+void open_object_window(const unrealsdk::unreal::FFieldVariant& var,
+                        const std::string& parent_window_id);
 
 }  // namespace live_object_explorer::gui
 
