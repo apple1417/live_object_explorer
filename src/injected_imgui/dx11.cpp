@@ -183,8 +183,8 @@ HRESULT INJECTED_IMGUI_STDCALL swap_chain_resize_buffers_hook(IDXGISwapChain* se
         context->OMSetRenderTargets(1, &main_render_view, nullptr);
 
         D3D11_VIEWPORT view;
-        view.Width = (float)width;
-        view.Height = (float)height;
+        view.Width = static_cast<float>(width);
+        view.Height = static_cast<float>(height);
         view.MinDepth = 0.0;
         view.MaxDepth = 1.0;
         view.TopLeftX = 0;

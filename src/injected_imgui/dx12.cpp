@@ -45,9 +45,10 @@ void create_render_resources(IDXGISwapChain* swap_chain) {
     for (UINT i = 0; i < dx::framebuffers.size(); i++) {
         swap_chain->GetBuffer(
             i, IID_ID3D12Resource,
-            reinterpret_cast<void**>(&dx::framebuffers[i].main_render_target_resource));
-        dx::device->CreateRenderTargetView(dx::framebuffers[i].main_render_target_resource, nullptr,
-                                           dx::framebuffers[i].main_render_target_descriptor);
+            reinterpret_cast<void**>(&dx::framebuffers.at(i).main_render_target_resource));
+        dx::device->CreateRenderTargetView(dx::framebuffers.at(i).main_render_target_resource,
+                                           nullptr,
+                                           dx::framebuffers.at(i).main_render_target_descriptor);
     }
 }
 
@@ -94,9 +95,12 @@ bool ensure_initialized(IDXGISwapChain3* swap_chain) {
     }
 
     {
-        const D3D12_DESCRIPTOR_HEAP_DESC srv_desc = {D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-                                                     buffer_count,
-                                                     D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE, 0};
+        const D3D12_DESCRIPTOR_HEAP_DESC srv_desc = {
+            .Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+            .NumDescriptors = buffer_count,
+            .Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE,
+            .NodeMask = 0,
+        };
 
         if (auto ret =
                 dx::device->CreateDescriptorHeap(&srv_desc, IID_ID3D12DescriptorHeap,
@@ -118,8 +122,12 @@ bool ensure_initialized(IDXGISwapChain3* swap_chain) {
     }
 
     {
-        const D3D12_DESCRIPTOR_HEAP_DESC rtv_desc = {D3D12_DESCRIPTOR_HEAP_TYPE_RTV, buffer_count,
-                                                     D3D12_DESCRIPTOR_HEAP_FLAG_NONE, 1};
+        const D3D12_DESCRIPTOR_HEAP_DESC rtv_desc = {
+            .Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV,
+            .NumDescriptors = buffer_count,
+            .Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE,
+            .NodeMask = 1,
+        };
 
         if (auto ret =
                 dx::device->CreateDescriptorHeap(&rtv_desc, IID_ID3D12DescriptorHeap,
@@ -167,7 +175,7 @@ bool ensure_initialized(IDXGISwapChain3* swap_chain) {
     }
 
     if (auto ret = dx::device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                                 dx::framebuffers[0].command_allocator, nullptr,
+                                                 dx::framebuffers.at(0).command_allocator, nullptr,
                                                  IID_ID3D12GraphicsCommandList,
                                                  reinterpret_cast<void**>(&dx::command_list))
                    != S_OK) {
@@ -178,7 +186,7 @@ bool ensure_initialized(IDXGISwapChain3* swap_chain) {
     ImGui_ImplDX12_InitInfo init_info = {};
     init_info.Device = dx::device;
     init_info.CommandQueue = dx::command_queue;
-    init_info.NumFramesInFlight = (int)buffer_count;
+    init_info.NumFramesInFlight = static_cast<int>(buffer_count);
     init_info.RTVFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
     init_info.DSVFormat = DXGI_FORMAT_UNKNOWN;
 
@@ -194,8 +202,10 @@ bool ensure_initialized(IDXGISwapChain3* swap_chain) {
     init_info.SrvDescriptorFreeFn = [](ImGui_ImplDX12_InitInfo*,
                                        D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle,
                                        D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle) {
-        auto cpu_idx = (size_t)((cpu_handle.ptr - dx::heap_start_cpu.ptr) / dx::heap_increment);
-        auto gpu_idx = (size_t)((gpu_handle.ptr - dx::heap_start_gpu.ptr) / dx::heap_increment);
+        auto cpu_idx =
+            static_cast<size_t>((cpu_handle.ptr - dx::heap_start_cpu.ptr) / dx::heap_increment);
+        auto gpu_idx =
+            static_cast<size_t>((gpu_handle.ptr - dx::heap_start_gpu.ptr) / dx::heap_increment);
         if (cpu_idx != gpu_idx) {
             LOG(ERROR, "DX12 heap free gpu idx was different to cpu");
         }
@@ -272,7 +282,7 @@ HRESULT INJECTED_IMGUI_STDCALL swap_chain_present_hook(IDXGISwapChain3* self,
 
             ImGui::Render();
 
-            auto& current_frame_context = dx::framebuffers[self->GetCurrentBackBufferIndex()];
+            auto& current_frame_context = dx::framebuffers.at(self->GetCurrentBackBufferIndex());
             current_frame_context.command_allocator->Reset();
 
             D3D12_RESOURCE_BARRIER barrier = {

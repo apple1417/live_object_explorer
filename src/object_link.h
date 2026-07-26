@@ -50,12 +50,10 @@ struct CachedObjLink {
      * @param field The current field.
      * @param setter Called with a candidate object (possibly null) to try set.
      */
-    void draw_editable_object(
-        unrealsdk::unreal::UObject* obj,
-        const std::function<void(unrealsdk::unreal::UObject*)>& setter);
-    void draw_editable_field(
-        unrealsdk::unreal::FField* field,
-        const std::function<void(unrealsdk::unreal::UObject*)>& setter);
+    void draw_editable_object(unrealsdk::unreal::UObject* obj,
+                              const std::function<void(unrealsdk::unreal::UObject*)>& setter);
+    void draw_editable_field(unrealsdk::unreal::FField* field,
+                             const std::function<void(unrealsdk::unreal::UObject*)>& setter);
 
    public:
     /**

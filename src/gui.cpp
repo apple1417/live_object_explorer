@@ -110,13 +110,13 @@ void draw_search_window(void) {
 
         if (ImGui::BeginListBox("##search_results", ImVec2{-FLT_MIN, -filter_height})) {
             for (size_t i = 0; i < search_results.size(); i++) {
-                auto& [name, ptr] = search_results[i];
+                auto& [name, ptr] = search_results.at(i);
                 if (!search_filter.PassFilter(name.c_str())) {
                     continue;
                 }
 
                 const bool is_selected = selected_search_idx == i;
-                const bool still_loaded = (bool)ptr;
+                const bool still_loaded = static_cast<bool>(ptr);
 
                 if (ImGui::Selectable(name.c_str(), is_selected,
                                       still_loaded ? 0 : ImGuiSelectableFlags_Disabled)) {
@@ -161,10 +161,11 @@ ImVec2 get_default_object_window_size(void) {
     const constexpr auto default_x = 600;
     const constexpr auto default_y = 600;
 
-    return {(float)unrealsdk::config::get_int("live_object_explorer.default_window_size.x")
-                .value_or(default_x),
-            (float)unrealsdk::config::get_int("live_object_explorer.default_window_size.y")
-                .value_or(default_y)};
+    return {
+        static_cast<float>(unrealsdk::config::get_int("live_object_explorer.default_window_size.x")
+                               .value_or(default_x)),
+        static_cast<float>(unrealsdk::config::get_int("live_object_explorer.default_window_size.y")
+                               .value_or(default_y))};
 }
 
 }  // namespace

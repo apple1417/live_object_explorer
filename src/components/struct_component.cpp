@@ -53,7 +53,7 @@ void StructComponent::draw(const ObjectWindowSettings& settings,
 }
 
 bool StructComponent::passes_filter(const ImGuiTextFilter& filter) {
-    // It passes if the root passes, or any child passess
+    // It passes if the root passes, or any child passes
     return AbstractComponent::passes_filter(filter)
            || std::ranges::any_of(this->components, [&filter](auto& component) {
                   return component->passes_filter(filter);

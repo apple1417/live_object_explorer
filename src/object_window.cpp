@@ -42,9 +42,9 @@ ObjectWindow::ObjectWindow(const FFieldVariant& var)
         this->ffield = nullptr;
 
         for (UStruct* cls = obj->Class(); cls != nullptr; cls = cls->SuperField()) {
-            this->prop_sections.emplace_back((std::string)cls->Name(),
+            this->prop_sections.emplace_back(static_cast<std::string>(cls->Name()),
                                              decltype(ClassSection::components){});
-            this->field_sections.emplace_back((std::string)cls->Name(),
+            this->field_sections.emplace_back(static_cast<std::string>(cls->Name()),
                                               decltype(ClassSection::components){});
 
             auto& prop_components = this->prop_sections.back().components;

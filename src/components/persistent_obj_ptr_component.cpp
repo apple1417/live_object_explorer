@@ -42,7 +42,7 @@ SoftObjectComponent::PersistentObjectPtrComponent(std::string&& name,
     if (subpath_size > 0) {
         identifier.reserve(identifier.size() + subpath_size + 1);
         name += ':';
-        name += (std::string)addr->identifier.subpath;
+        name += static_cast<std::string>(addr->identifier.subpath);
     }
 }
 

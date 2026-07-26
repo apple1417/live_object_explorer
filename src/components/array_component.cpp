@@ -46,7 +46,8 @@ void update_components_list(std::vector<std::unique_ptr<AbstractComponent>>& com
     // was modified.
     auto current_count = addr->size();
     if (current_count < old_count) {
-        components.erase(components.begin() + (ptrdiff_t)current_count, components.end());
+        components.erase(components.begin() + static_cast<ptrdiff_t>(current_count),
+                         components.end());
     } else if (current_count > old_count) {
         for (size_t i = old_count; i < current_count; i++) {
             insert_component_array(components, addr, inner_prop, i);
@@ -151,7 +152,7 @@ void ArrayComponent::draw(const ObjectWindowSettings& settings,
 }
 
 bool ArrayComponent::passes_filter(const ImGuiTextFilter& filter) {
-    // It passes if the root passes, or any child passess
+    // It passes if the root passes, or any child passes
     return AbstractComponent::passes_filter(filter)
            || std::ranges::any_of(this->components, [&filter](auto& component) {
                   return component->passes_filter(filter);

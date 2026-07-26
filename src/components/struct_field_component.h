@@ -13,7 +13,11 @@ class StructFieldComponent : public ObjectFieldComponent {
     struct PropData {
         std::string name;
         std::string type;
+#if UNREALSDK_PROPERTIES_ARE_FFIELD
+        unrealsdk::unreal::FField* link;
+#else
         unrealsdk::unreal::WeakPointer link;
+#endif
     };
 
     std::vector<PropData> properties;

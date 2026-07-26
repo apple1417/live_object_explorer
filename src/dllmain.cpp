@@ -54,7 +54,7 @@ DWORD WINAPI startup_thread(LPVOID /*unused*/) {
 
         ImGui_ImplWin32_EnableDpiAwareness();
         const float main_scale = ImGui_ImplWin32_GetDpiScaleForMonitor(
-            ::MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY));
+            ::MonitorFromPoint(POINT{.x = 0, .y = 0}, MONITOR_DEFAULTTOPRIMARY));
 
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
