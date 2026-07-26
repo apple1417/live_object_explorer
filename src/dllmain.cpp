@@ -13,9 +13,10 @@ namespace {
  *
  * @return unused.
  */
-DWORD WINAPI startup_thread(LPVOID /*unused*/) {
+DWORD WINAPI live_oe_startup(LPVOID /*unused*/) {
     try {
         while (!unrealsdk::is_console_ready()) {}
+        LOG(MISC, "Live Object Explorer initializing");
 
         auto cmd = unrealsdk::config::get_str("live_object_explorer.command").value_or("explore");
         if (!unrealsdk::commands::add_command(
@@ -26,7 +27,7 @@ DWORD WINAPI startup_thread(LPVOID /*unused*/) {
                         gui::search(unrealsdk::utils::narrow(args));
                     }
                 })) {
-            LOG(ERROR, "Live Object Explorer: failed to add '{}' command", cmd);
+            LOG(ERROR, "Failed to add '{}' command", cmd);
         }
 
         std::optional<injected_imgui::auto_detect::Api> api{};
@@ -38,15 +39,26 @@ DWORD WINAPI startup_thread(LPVOID /*unused*/) {
             } else if (*api_str == "dx12") {
                 api = injected_imgui::auto_detect::Api::DX12;
             } else {
-                LOG(ERROR, "Live Object Explorer: Unrecognised graphics api: {}", *api_str);
+                LOG(ERROR, "Unrecognised graphics api: {}", *api_str);
             }
         }
 
         if (!api) {
             api = injected_imgui::auto_detect::auto_detect_api();
             if (!api) {
-                LOG(ERROR, "Live Object Explorer: Failed to autodetect graphics api");
+                LOG(ERROR, "Failed to autodetect graphics api");
                 return 1;
+            }
+            switch (*api) {
+                case injected_imgui::auto_detect::Api::DX9:
+                    LOG(MISC, "Autodetected graphics api: DX9");
+                    break;
+                case injected_imgui::auto_detect::Api::DX11:
+                    LOG(MISC, "Autodetected graphics api: DX11");
+                    break;
+                case injected_imgui::auto_detect::Api::DX12:
+                    LOG(MISC, "Autodetected graphics api: DX12");
+                    break;
             }
         }
 
@@ -76,6 +88,7 @@ DWORD WINAPI startup_thread(LPVOID /*unused*/) {
         gui::show();
 #endif
 
+        LOG(MISC, "Live Object Explorer loaded");
     } catch (const std::exception& ex) {
         LOG(ERROR, "Exception occurred during live object explorer initialization: {}", ex.what());
     } catch (...) {
@@ -101,7 +114,7 @@ BOOL APIENTRY DllMain(HMODULE h_module, DWORD ul_reason_for_call, LPVOID /*unuse
     switch (ul_reason_for_call) {
         case DLL_PROCESS_ATTACH:
             DisableThreadLibraryCalls(h_module);
-            CreateThread(nullptr, 0, &live_object_explorer::startup_thread, nullptr, 0, nullptr);
+            CreateThread(nullptr, 0, &live_object_explorer::live_oe_startup, nullptr, 0, nullptr);
             break;
         case DLL_THREAD_ATTACH:
         case DLL_THREAD_DETACH:
