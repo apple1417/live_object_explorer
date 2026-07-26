@@ -195,7 +195,7 @@
       "displayName": "Willow64 Debug (Clang)",
       "inherits": [
         "_base",
-        "_clang_x86",
+        "_clang_x64",
         "_willow64",
         "_debug"
       ]
@@ -205,7 +205,7 @@
       "displayName": "Willow64 Release (Clang)",
       "inherits": [
         "_base",
-        "_clang_x86",
+        "_clang_x64",
         "_willow64",
         "_release"
       ]
@@ -275,7 +275,7 @@
       "displayName": "Willow64 Debug (Clang Cross Compiler)",
       "inherits": [
         "_base",
-        "_clang_cross_x86",
+        "_clang_cross_x64",
         "_willow64",
         "_debug"
       ]
@@ -285,7 +285,7 @@
       "displayName": "Willow64 Release (Clang Cross Compiler)",
       "inherits": [
         "_base",
-        "_clang_cross_x86",
+        "_clang_cross_x64",
         "_willow64",
         "_release"
       ]
@@ -355,7 +355,7 @@
       "displayName": "Willow64 Debug (LLVM MinGW)",
       "inherits": [
         "_base",
-        "_llvm_mingw_x86",
+        "_llvm_mingw_x64",
         "_willow64",
         "_debug"
       ]
@@ -365,7 +365,7 @@
       "displayName": "Willow64 Release (LLVM MinGW)",
       "inherits": [
         "_base",
-        "_llvm_mingw_x86",
+        "_llvm_mingw_x64",
         "_willow64",
         "_release"
       ]
@@ -435,7 +435,7 @@
       "displayName": "Willow64 Debug (MinGW)",
       "inherits": [
         "_base",
-        "_mingw_x86",
+        "_mingw_x64",
         "_willow64",
         "_debug"
       ]
@@ -445,7 +445,7 @@
       "displayName": "Willow64 Release (MinGW)",
       "inherits": [
         "_base",
-        "_mingw_x86",
+        "_mingw_x64",
         "_willow64",
         "_release"
       ]
