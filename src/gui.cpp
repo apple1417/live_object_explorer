@@ -2,6 +2,7 @@
 #include "gui.h"
 #include "components/abstract.h"
 #include "object_window.h"
+#include "refs.h"
 
 #include "version.inl"
 
@@ -18,6 +19,12 @@ const std::string TITLE_STR = std::format("Live Object Explorer (v{}, {}{})###Li
                                           GIT_IS_DIRTY ? ", dirty" : "");
 
 bool search_window_open = false;
+bool search_for_refs = false;
+
+using time_point = std::chrono::time_point<std::chrono::steady_clock>;
+time_point last_snapshot_time = time_point::min();
+time_point next_time_text_update = time_point::min();
+std::string last_snapshot_time_text = "Never";
 
 // NOLINTNEXTLINE(readability-magic-numbers)
 std::array<char, 1024> search_query{};
@@ -93,9 +100,8 @@ void draw_search_window(void) {
     ImGui::SetNextWindowSize(default_window_size, ImGuiCond_FirstUseEver);
     if (ImGui::Begin(TITLE_STR.c_str(), &search_window_open)) {
         auto text_size = ImGui::CalcTextSize("Search");
+        // The text width, plus one spacing either side
         auto rhs_width = text_size.x + (2 * ImGui::GetStyle().ItemSpacing.x);
-        // Assume the filter box height is the same as the general text height
-        auto filter_height = text_size.y + (3 * ImGui::GetStyle().FramePadding.y) + 1;
 
         ImGui::SetNextItemWidth(-rhs_width);
         if (ImGui::InputText(
@@ -108,7 +114,72 @@ void draw_search_window(void) {
             do_search();
         }
 
-        if (ImGui::BeginListBox("##search_results", ImVec2{-FLT_MIN, -filter_height})) {
+        // If we zero the window padding, the header won't extend past the normal margins
+        auto old_padding = ImGui::GetCurrentWindow()->WindowPadding.x;
+        ImGui::GetCurrentWindow()->WindowPadding.x = 0;
+
+        if (ImGui::TreeNodeEx("References",
+                              ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_NoTreePushOnOpen)) {
+            ImGui::GetCurrentWindow()->WindowPadding.x = old_padding;
+
+            ImGui::BeginDisabled(!refs::has_snapshot());
+            ImGui::Checkbox("Search for References", &search_for_refs);
+            if (!refs::has_snapshot()) {
+                ImGui::SetItemTooltip("Take a snapshot to be able to search for references");
+            }
+            ImGui::EndDisabled();
+
+            if (refs::has_snapshot()) {
+                auto now = std::chrono::steady_clock::now();
+                if (next_time_text_update <= now) {
+                    auto minutes =
+                        std::chrono::duration_cast<std::chrono::minutes>(now - last_snapshot_time)
+                            .count();
+                    if (minutes == 0) {
+                        last_snapshot_time_text = "Now";
+                    } else if (minutes == 1) {
+                        last_snapshot_time_text = "1 minute ago";
+                    } else {
+                        last_snapshot_time_text = std::format("{} minutes ago", minutes);
+                    }
+                    next_time_text_update = now + std::chrono::minutes{1};
+                }
+            }
+
+            ImGui::Text("Last Snapshot: %s", last_snapshot_time_text.c_str());
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x
+                                 - ImGui::CalcTextSize("Snapshot References").x
+                                 - ImGui::GetStyle().ItemSpacing.x);
+            if (ImGui::Button("Snapshot References")) {
+                refs::take_snapshot();
+                last_snapshot_time = next_time_text_update = std::chrono::steady_clock::now();
+            }
+
+            ImGui::TextWrapped("Taking a snapshot will freeze the game for several seconds.");
+
+#ifndef NDEBUG
+            ImGui::Text("Debug:");
+            ImGui::SameLine();
+            if (ImGui::Button("Import DB")) {
+                refs::import_db();
+            }
+            ImGui::SameLine();
+            ImGui::BeginDisabled(!refs::has_snapshot());
+            if (ImGui::Button("Export DB")) {
+                refs::import_db();
+            }
+            ImGui::EndDisabled();
+#endif
+        } else {
+            ImGui::GetCurrentWindow()->WindowPadding.x = old_padding;
+        }
+
+        // Assuming text height + a padding each side internally + a padding each side externally
+        // Doesn't seem entirely accurate, but at least avoids the scrollbar
+        auto below_listbox_height = text_size.y + (4 * ImGui::GetStyle().FramePadding.y);
+
+        if (ImGui::BeginListBox("##search_results", ImVec2{-FLT_MIN, -below_listbox_height})) {
             for (size_t i = 0; i < search_results.size(); i++) {
                 auto& [name, ptr] = search_results.at(i);
                 if (!search_filter.PassFilter(name.c_str())) {
