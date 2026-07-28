@@ -48,6 +48,16 @@ add_library(imgui OBJECT
 )
 target_include_directories(imgui PUBLIC "libs/imgui" "libs/imgui/backends")
 
+include(FetchContent)
+FetchContent_Declare(
+    sqlite3_amalgamation
+    URL      https://sqlite.org/2026/sqlite-amalgamation-3530400.zip
+    URL_HASH SHA256=1e71ddf93849c6a6ecf58b827c0692073d2dd7ee40196158068f7b29f422e87d
+)
+FetchContent_MakeAvailable(sqlite3_amalgamation)
+add_library(sqlite3 OBJECT "${sqlite3_amalgamation_SOURCE_DIR}/sqlite3.c")
+target_include_directories(sqlite3 PUBLIC "${sqlite3_amalgamation_SOURCE_DIR}")
+
 set(UNREALSDK_SHARED True)
 add_subdirectory(libs/unrealsdk EXCLUDE_FROM_ALL)
 
@@ -64,6 +74,7 @@ target_include_directories(live_object_explorer PUBLIC "src" "${CONFIGURE_FILES_
 target_precompile_headers(live_object_explorer PUBLIC "src/pch.h")
 target_link_libraries(live_object_explorer PUBLIC
     imgui
+    sqlite3
     unrealsdk
 
     dxguid.lib

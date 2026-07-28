@@ -163,11 +163,12 @@ void draw_search_window(void) {
             ImGui::SameLine();
             if (ImGui::Button("Import DB")) {
                 refs::import_db();
+                last_snapshot_time = next_time_text_update = std::chrono::steady_clock::now();
             }
             ImGui::SameLine();
             ImGui::BeginDisabled(!refs::has_snapshot());
             if (ImGui::Button("Export DB")) {
-                refs::import_db();
+                refs::export_db();
             }
             ImGui::EndDisabled();
 #endif
