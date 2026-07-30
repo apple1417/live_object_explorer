@@ -13,6 +13,17 @@
 #pragma clang diagnostic pop
 #endif
 
+#if !defined(NDEBUG) && defined(_MSC_VER)
+// NOLINTNEXTLINE(cppcoreguielines-macro-usage)
+#define BREAKPOINT() __debugbreak()
+#else
+#define BREAKPOINT()
+#endif
+
+// NOLINTNEXTLINE(modernize-type-traits) // ???
+
+using namespace unrealsdk::unreal;
+
 namespace live_object_explorer::refs {
 
 namespace {
@@ -43,11 +54,11 @@ std::shared_ptr<sqlite3> open_db(const char* filename) {
     auto res = sqlite3_open(filename, &new_db);
     if (res != SQLITE_OK) {
         LOG(ERROR, "Failed to open database at {}: {}", filename, sqlite3_errstr(res));
+        BREAKPOINT();
         sqlite3_close(new_db);
         return nullptr;
     }
     return std::shared_ptr<sqlite3>{new_db, [](sqlite3* db_to_close) {
-                                        LOG(INFO, "closing");
                                         auto res = sqlite3_close(db_to_close);
                                         if (res != SQLITE_OK) {
                                             LOG(ERROR, "Failed to close database: {}",
@@ -65,23 +76,34 @@ std::filesystem::path get_local_db_path(void) {
     return unrealsdk::utils::get_this_dll().parent_path() / "live_object_explorer_refs.sqlite3";
 }
 
-}  // namespace
+/**
+ * @brief Wipes and creates a new database.
+ *
+ * @return True if sucessfully created, false on any error.
+ */
+bool create_new_db(void) {
+    database = open_db("");
 
-bool has_snapshot(void) {
-    return database != nullptr;
-}
+    auto exec = [](const char* query) {
+        char* error = nullptr;
+        auto ret = sqlite3_exec(database.get(), query, nullptr, nullptr, &error);
+        if (ret != SQLITE_OK) {
+            LOG(ERROR, "Sqlite exec failed: {}", sqlite3_errstr(ret));
+            BREAKPOINT();
+            if (error != nullptr) {
+                LOG(ERROR, "{}", error);
+                sqlite3_free(error);
+            }
+            return false;
+        }
+        return true;
+    };
 
-void take_snapshot(void) {
-    database = open_db(":memory:");
-
-    // TODO: probably want a helper
-    sqlite3_exec(database.get(), "PRAGMA foreign_keys = ON", nullptr, nullptr, nullptr);
-
-    char* error = nullptr;
-    auto ret = sqlite3_exec(database.get(), R"==(
+    // Keep foreign_keys in a seperate statement to be safe
+    return exec("PRAGMA foreign_keys = ON") && exec(R"==(
         CREATE TABLE Objects (
             Pointer     INTEGER NOT NULL UNIQUE,
-            Name        TEXT NOT NULL,
+            Name        TEXT,
             PRIMARY KEY(Pointer)
         ) STRICT;
 
@@ -92,13 +114,241 @@ void take_snapshot(void) {
             FOREIGN KEY(ToPointer) REFERENCES Objects(Pointer),
             UNIQUE(FromPointer, ToPointer)
         ) STRICT;
-    )==",
-                            nullptr, nullptr, &error);
-    if (ret != SQLITE_OK) {
-        LOG(ERROR, "Sqlite exec failed: {}", sqlite3_errstr(ret));
-        if (error != nullptr) {
-            LOG(ERROR, "{}", error);
+    )==");
+}
+
+/**
+ * @brief Prepares a (long term) sqlite query.
+ *
+ * @param query The query to prepare.
+ * @return A pointer to the prepared statement, or null on error.
+ */
+std::shared_ptr<sqlite3_stmt> prepare_statement(std::string_view query) {
+    sqlite3_stmt* raw_statement = nullptr;
+    auto res = sqlite3_prepare_v3(database.get(), query.data(), static_cast<int>(query.size() + 1),
+                                  SQLITE_PREPARE_PERSISTENT, &raw_statement, nullptr);
+    if (res != SQLITE_OK) {
+        LOG(ERROR, "Failed to prepare statement: {}", sqlite3_errmsg(database.get()));
+        BREAKPOINT();
+        return {nullptr};
+    }
+    return {raw_statement, sqlite3_finalize};
+};
+
+// We need one prepared statement per thread. Rather than actually deal with statements, I'd prefer
+// lambdas, with raii cleanup - so make some factory functions that return a lambda.
+// This means we can't easily return null, so use a tuple with a separate success bool.
+
+/**
+ * @brief Creates a lambda to insert an object name.
+ *
+ * @return A tuple of a success bool, and the lambda.
+ */
+auto create_insert_object_lambda(void) {
+    auto insert_object_statement = prepare_statement(R"==(
+        INSERT OR IGNORE INTO
+            Objects (Pointer)
+        VALUES
+            (?)
+    )==");
+
+    auto insert_object = [insert_object_statement](UObject* obj) {
+        if (insert_object_statement == nullptr || obj == nullptr) {
+            return;
         }
+        sqlite3_reset(insert_object_statement.get());
+
+        auto pointer = static_cast<sqlite_int64>(reinterpret_cast<intptr_t>(obj));
+        auto res = sqlite3_bind_int64(insert_object_statement.get(), 1, pointer);
+        if (res != SQLITE_OK) {
+            LOG(ERROR, "Failed to bind 'object' in 'insert object' query: {}", sqlite3_errstr(res));
+            BREAKPOINT();
+            return;
+        }
+
+        res = sqlite3_step(insert_object_statement.get());
+        if (res != SQLITE_DONE) {
+            LOG(ERROR, "Failed to step 'insert object' query: {}", sqlite3_errmsg(database.get()));
+            BREAKPOINT();
+            return;
+        }
+    };
+    return std::make_tuple(insert_object_statement != nullptr, insert_object);
+}
+
+/**
+ * @brief Creates a lambda to insert an object reference.
+ *
+ * @return A tuple of a success bool, and the lambda.
+ */
+auto create_insert_ref_lambda(void) {
+    auto insert_ref_statement = prepare_statement(R"==(
+        INSERT OR IGNORE INTO
+            Refs (FromPointer, ToPointer)
+        VALUES
+            (?, ?)
+    )==");
+
+    auto insert_ref = [insert_ref_statement](UObject* from_obj, UObject* to_obj) {
+        if (insert_ref_statement == nullptr || from_obj == nullptr || to_obj == nullptr) {
+            return;
+        }
+        sqlite3_reset(insert_ref_statement.get());
+
+        auto from_pointer = static_cast<sqlite_int64>(reinterpret_cast<intptr_t>(from_obj));
+        auto to_pointer = static_cast<sqlite_int64>(reinterpret_cast<intptr_t>(to_obj));
+
+        auto res = sqlite3_bind_int64(insert_ref_statement.get(), 1, from_pointer);
+        if (res != SQLITE_OK) {
+            LOG(ERROR, "Failed to bind 'from object' in 'insert ref' query: {}",
+                sqlite3_errstr(res));
+            BREAKPOINT();
+            return;
+        }
+        res = sqlite3_bind_int64(insert_ref_statement.get(), 2, to_pointer);
+        if (res != SQLITE_OK) {
+            LOG(ERROR, "Failed to bind 'to object' in 'insert ref' query: {}", sqlite3_errstr(res));
+            BREAKPOINT();
+            return;
+        }
+
+        res = sqlite3_step(insert_ref_statement.get());
+        if (res != SQLITE_DONE) {
+            LOG(ERROR, "Failed to step 'insert ref' query: {}", sqlite3_errmsg(database.get()));
+            BREAKPOINT();
+        }
+    };
+
+    return std::make_tuple(insert_ref_statement != nullptr, insert_ref);
+}
+
+/**
+ * @brief Creates a lambda to update an object's name.
+ *
+ * @return A tuple of a success bool, and the lambda.
+ */
+auto create_update_object_name_lambda(void) {
+    auto update_object_name_statement = prepare_statement(R"==(
+        UPDATE
+            Objects
+        SET
+            Name = ?
+        WHERE
+            Pointer = ?
+    )==");
+    auto update_object_name = [update_object_name_statement](UObject* obj) {
+        if (update_object_name_statement == nullptr || obj == nullptr) {
+            return;
+        }
+        sqlite3_reset(update_object_name_statement.get());
+
+        auto name = obj->get_path_name();
+        auto pointer = static_cast<sqlite_int64>(reinterpret_cast<intptr_t>(obj));
+
+        static_assert(sizeof(wchar_t) == sizeof(char16_t));
+        auto res = sqlite3_bind_text16(update_object_name_statement.get(), 1, name.c_str(),
+                                       static_cast<int>(name.size() * sizeof(wchar_t)),
+                                       // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
+                                       SQLITE_TRANSIENT);
+        if (res != SQLITE_OK) {
+            LOG(ERROR, "Failed to bind 'name' in 'update object name' query: {}",
+                sqlite3_errstr(res));
+
+            BREAKPOINT();
+
+            return;
+        }
+
+        res = sqlite3_bind_int64(update_object_name_statement.get(), 2, pointer);
+        if (res != SQLITE_OK) {
+            LOG(ERROR, "Failed to bind 'object' in 'update object name' query: {}",
+                sqlite3_errstr(res));
+            BREAKPOINT();
+            return;
+        }
+
+        res = sqlite3_step(update_object_name_statement.get());
+        if (res != SQLITE_DONE) {
+            LOG(ERROR, "Failed to step 'update object name' query: {}",
+                sqlite3_errmsg(database.get()));
+            BREAKPOINT();
+        }
+    };
+
+    return std::make_tuple(update_object_name_statement != nullptr, update_object_name);
+}
+
+}  // namespace
+
+bool has_snapshot(void) {
+    return database != nullptr;
+}
+
+void take_snapshot(void) {
+    if (!create_new_db()) {
+        database = nullptr;
+        return;
+    }
+
+    // Some misc setup before we stop the world
+
+    size_t num_threads = std::thread::hardware_concurrency();
+    if (num_threads == 0) {
+        // May return 0 if not supported.
+        // Currently steam hardware survey says 6 and 8 cores are ~25% each, so lets go with the
+        // better of the two.
+        // NOLINTNEXTLINE(readability-magic-numbers)
+        num_threads = 8;
+    }
+
+    std::vector<std::thread> threads{};
+    threads.reserve(num_threads);
+
+    auto gobjects = unrealsdk::gobjects();
+
+    // Stop the world. While checking refs we can't let the game (or anything else) mess with them.
+    const unrealsdk::utils::ThreadSuspender suspend{};
+
+    // Chunk gobjects per thread
+    auto num_objects = gobjects.size();
+    // Round up to make sure we don't miss anything, the last thread will do less
+    auto objects_per_thread = ((num_objects - 1) / num_threads) + 1;
+
+    for (size_t start_idx = 0; start_idx < num_objects; start_idx += objects_per_thread) {
+        auto end_idx = std::min(start_idx + objects_per_thread, num_objects);
+        threads.emplace_back([start_idx, end_idx, &gobjects]() {
+            // Need to create a seperate prepared starement/lambda on each thread
+            auto [success, insert_object] = create_insert_object_lambda();
+            if (!success) {
+                return;
+            }
+            // TODO: should only really be doing names at the end, outside of this
+            auto [success2_tmp, update_object_name] = create_update_object_name_lambda();
+            if (!success2_tmp) {
+                return;
+            }
+
+            // Iterate through all objects
+            for (auto i = start_idx; i < end_idx; i++) {
+                UObject* obj = nullptr;
+                try {
+                    obj = gobjects.obj_at(i);
+                } catch (const std::out_of_range&) {
+                    continue;
+                }
+                if (obj == nullptr) {
+                    continue;
+                }
+
+                insert_object(obj);
+                // TODO: check refs here
+                // TODO: only check names at the end, outside of this loop
+                update_object_name(obj);
+            }
+        });
+    }
+    for (auto& thread : threads) {
+        thread.join();
     }
 }
 
@@ -111,7 +361,7 @@ void import_db(void) {
     bool wipe_db_on_exit = false;
     if (database == nullptr) {
         wipe_db_on_exit = true;
-        database = open_db(":memory:");
+        database = open_db("");
         if (database == nullptr) {
             return;
         }
@@ -131,18 +381,21 @@ void import_db(void) {
     auto backup = sqlite3_backup_init(database.get(), "main", import_db.get(), "main");
     if (backup == nullptr) {
         LOG(ERROR, "Failed to create backup object: {}", sqlite3_errmsg(database.get()));
+        BREAKPOINT();
         return;
     }
     const RaiiLambda raii2{[&]() {
         auto ret = sqlite3_backup_finish(backup);
         if (ret != SQLITE_OK) {
             LOG(ERROR, "Failed to free backup object: {}", sqlite3_errstr(ret));
+            BREAKPOINT();
         }
     }};
 
     auto ret = sqlite3_backup_step(backup, -1);
     if (ret != SQLITE_DONE) {
         LOG(ERROR, "Failed to export database: {}", sqlite3_errmsg(database.get()));
+        BREAKPOINT();
     }
 
     // Successfully loaded, don't wipe
@@ -162,18 +415,21 @@ void export_db(void) {
     auto backup = sqlite3_backup_init(export_db.get(), "main", database.get(), "main");
     if (backup == nullptr) {
         LOG(ERROR, "Failed to create backup object: {}", sqlite3_errmsg(export_db.get()));
+        BREAKPOINT();
         return;
     }
     const RaiiLambda raii{[&]() {
         auto ret = sqlite3_backup_finish(backup);
         if (ret != SQLITE_OK) {
             LOG(ERROR, "Failed to free backup object: {}", sqlite3_errstr(ret));
+            BREAKPOINT();
         }
     }};
 
     auto ret = sqlite3_backup_step(backup, -1);
     if (ret != SQLITE_DONE) {
         LOG(ERROR, "Failed to export database: {}", sqlite3_errmsg(export_db.get()));
+        BREAKPOINT();
         return;
     }
 }
