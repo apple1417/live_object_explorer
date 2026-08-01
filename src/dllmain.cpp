@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "gui.h"
 #include "injected_imgui/auto.h"
+#include "refs.h"
 #include "theme.h"
 
 namespace live_object_explorer {
@@ -17,6 +18,8 @@ DWORD WINAPI live_oe_startup(LPVOID /*unused*/) {
     try {
         while (!unrealsdk::is_console_ready()) {}
         LOG(MISC, "Live Object Explorer initializing");
+
+        refs::init();
 
         auto cmd = unrealsdk::config::get_str("live_object_explorer.command").value_or("explore");
         if (!unrealsdk::commands::add_command(

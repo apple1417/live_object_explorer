@@ -19,5 +19,8 @@ default_window_size = { x = 600, y = 600 }
 # The issue only seems to happen to people running dx12 on an AMD gpu - hence the name.
 amd_dx12_hack = false
 
+# Use this many threads when taking a snapshot. When undefined, chooses automatically.
+snapshot_threads = -1
+
 # Exposes a few extra settings which help debug issues with the references database
 db_debug = false

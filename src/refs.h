@@ -9,6 +9,11 @@ namespace live_object_explorer::refs {
 extern uint32_t num_threads;
 
 /**
+ * @brief Initalizes the references modules.
+ */
+void init(void);
+
+/**
  * @brief Checks if we have a refs snapshot, and are able to search.
  *
  * @return True if we have a snapshot.

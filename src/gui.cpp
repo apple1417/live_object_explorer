@@ -158,7 +158,7 @@ void draw_search_window(void) {
                 last_snapshot_time = next_time_text_update = std::chrono::steady_clock::now();
             }
 
-            ImGui::TextWrapped("Taking a snapshot will freeze the game for several seconds.");
+            ImGui::TextWrapped("Taking a snapshot will freeze the game as much as a minute.");
 
             static const bool show_debug =
                 unrealsdk::config::get_bool("live_object_explorer.db_debug")

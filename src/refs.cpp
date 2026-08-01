@@ -25,17 +25,9 @@ using namespace unrealsdk::unreal;
 
 namespace live_object_explorer::refs {
 
-uint32_t num_threads = []() {
-    uint32_t num = std::thread::hardware_concurrency();
-    if (num == 0) {
-        // May return 0 if not supported.
-        // Currently steam hardware survey says 6 and 8 cores are ~25% each, so lets go with the
-        // better of the two.
-        // NOLINTNEXTLINE(readability-magic-numbers)
-        num = 8;
-    }
-    return num;
-}();
+// While we have the mechanisms to support multithreading, benchmarks show a single thread actually
+// performs best
+uint32_t num_threads = 1;
 
 namespace {
 
@@ -93,7 +85,7 @@ std::filesystem::path get_local_db_path(void) {
  * @return True if sucessfully created, false on any error.
  */
 bool create_new_db(void) {
-    database = open_db("");
+    database = open_db(":memory:");
 
     auto exec = [](const char* query) {
         char* error = nullptr;
@@ -293,17 +285,39 @@ void take_snapshot(void) {
         return;
     }
 
-    // Some misc setup before we stop the world
+    /*
+    The rough plan for a snapshot is to:
+    1. Stop the world - we can't let the game mess with objects while we're scanning.
+    2. Iterate through every object in gobjects.
+    3. Iterate through every property on each object.
+    4. If it's an object property (or any type that references UObjects), add the pair to the
+       database.
 
+    Notably we do not recursively scan, since we'll find every referenced object at some point
+    anyway.
+
+    We also do not save references to FFields - we have no way to get back to them afterwards,
+    there's no unrealsdk::find_ffield.
+
+    To try reduce the total snapshot time, we split step 2 into chunks, and do each on a different
+    thread. We can easily just split based on index to parallelize these. Unfortunately, in
+    practice, sqlite only allows a single writer at a time, so benchmarks have shown this doesn't
+    really significantly change the snapshotting time.
+
+    Theory for a real improvement: Maybe we can create a seperate database per thread, and only
+    merge them at the end. This sounds complicated, and snapshot times aren't *that bad*, so leaving
+    it for now.
+    */
+
+    // Some misc setup before we stop the world
     std::vector<std::thread> threads{};
     threads.reserve(num_threads);
 
     auto gobjects = unrealsdk::gobjects();
 
-    // Stop the world. While checking refs we can't let the game (or anything else) mess with them.
+    // Stop the world.
     const unrealsdk::utils::ThreadSuspender suspend{};
 
-    // Chunk gobjects per thread
     auto num_objects = gobjects.size();
     // Round up to make sure we don't miss anything, the last thread will do less
     auto objects_per_thread = ((num_objects - 1) / num_threads) + 1;
@@ -311,7 +325,7 @@ void take_snapshot(void) {
     for (size_t start_idx = 0; start_idx < num_objects; start_idx += objects_per_thread) {
         auto end_idx = std::min(start_idx + objects_per_thread, num_objects);
         threads.emplace_back([start_idx, end_idx, &gobjects]() {
-            // Need to create a seperate prepared starement/lambda on each thread
+            // Need to create a seperate prepared statement/lambda on each thread
             auto insert_object = create_insert_object_lambda();
             if (insert_object == nullptr) {
                 return;
@@ -352,7 +366,7 @@ void import_db(void) {
     bool wipe_db_on_exit = false;
     if (database == nullptr) {
         wipe_db_on_exit = true;
-        database = open_db("");
+        database = open_db(":memory:");
         if (database == nullptr) {
             return;
         }
@@ -424,5 +438,14 @@ void export_db(void) {
         return;
     }
 }
+
+void init(void) {
+    // The only thing there actually is to initalise is reading your threads setting
+    auto setting = unrealsdk::config::get_int("live_object_explorer.snapshot_threads");
+    constexpr auto threshold = 64;
+    if (setting.has_value() && 1 <= *setting && *setting <= threshold) {
+        num_threads = (uint32_t)*setting;
+    }
+};
 
 }  // namespace live_object_explorer::refs
