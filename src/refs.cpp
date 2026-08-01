@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "refs.h"
+#include "refs_searcher.h"
 
 #ifdef __clang__
 // Sqlite, detecting `_MSC_VER`, tries to use `__int64`, which is an MSVC extension
@@ -20,11 +21,21 @@
 #define BREAKPOINT()
 #endif
 
-// NOLINTNEXTLINE(modernize-type-traits) // ???
-
 using namespace unrealsdk::unreal;
 
 namespace live_object_explorer::refs {
+
+uint32_t num_threads = []() {
+    uint32_t num = std::thread::hardware_concurrency();
+    if (num == 0) {
+        // May return 0 if not supported.
+        // Currently steam hardware survey says 6 and 8 cores are ~25% each, so lets go with the
+        // better of the two.
+        // NOLINTNEXTLINE(readability-magic-numbers)
+        num = 8;
+    }
+    return num;
+}();
 
 namespace {
 
@@ -108,8 +119,8 @@ bool create_new_db(void) {
         ) STRICT;
 
         CREATE TABLE Refs (
-            FromPointer INTEGER NOT NULL UNIQUE,
-            ToPointer   INTEGER NOT NULL UNIQUE,
+            FromPointer INTEGER NOT NULL,
+            ToPointer   INTEGER NOT NULL,
             FOREIGN KEY(FromPointer) REFERENCES Objects(Pointer),
             FOREIGN KEY(ToPointer) REFERENCES Objects(Pointer),
             UNIQUE(FromPointer, ToPointer)
@@ -137,14 +148,13 @@ std::shared_ptr<sqlite3_stmt> prepare_statement(std::string_view query) {
 
 // We need one prepared statement per thread. Rather than actually deal with statements, I'd prefer
 // lambdas, with raii cleanup - so make some factory functions that return a lambda.
-// This means we can't easily return null, so use a tuple with a separate success bool.
 
 /**
  * @brief Creates a lambda to insert an object name.
  *
- * @return A tuple of a success bool, and the lambda.
+ * @return The lambda, or null on failure.
  */
-auto create_insert_object_lambda(void) {
+std::function<void(UObject*)> create_insert_object_lambda(void) {
     auto upsert_object_statement = prepare_statement(R"==(
         INSERT INTO
             Objects (Pointer, Name)
@@ -154,7 +164,11 @@ auto create_insert_object_lambda(void) {
             Name = :name
     )==");
 
-    auto insert_object = [upsert_object_statement](UObject* obj) {
+    if (upsert_object_statement == nullptr) {
+        return nullptr;
+    }
+
+    return [upsert_object_statement](UObject* obj) {
         if (upsert_object_statement == nullptr || obj == nullptr) {
             return;
         }
@@ -188,31 +202,37 @@ auto create_insert_object_lambda(void) {
             return;
         }
     };
-    return std::make_tuple(upsert_object_statement != nullptr, insert_object);
 }
 
 /**
  * @brief Creates a lambda to insert an object reference.
  *
- * @return A tuple of a success bool, and the lambda.
+ * @return The lambda, or null on failure.
  */
-auto create_insert_ref_lambda(void) {
+refs_callback create_insert_ref_lambda(void) {
     // We know the from object must already have been inserted, so only need to add the to object
     auto insert_object_statement = prepare_statement(R"==(
         INSERT OR IGNORE INTO
             Objects (Pointer)
         VALUES
             (:to)
+        ON CONFLICT(Pointer) DO NOTHING
     )==");
+    if (insert_object_statement == nullptr) {
+        return nullptr;
+    }
     auto insert_ref_statement = prepare_statement(R"==(
-        INSERT OR IGNORE INTO
+        INSERT INTO
             Refs (FromPointer, ToPointer)
         VALUES
             (:from, :to)
+        ON CONFLICT(FromPointer, ToPointer) DO NOTHING
     )==");
+    if (insert_ref_statement == nullptr) {
+        return nullptr;
+    }
 
-    auto insert_ref = [insert_object_statement, insert_ref_statement](UObject* from_obj,
-                                                                      UObject* to_obj) {
+    return [insert_object_statement, insert_ref_statement](UObject* from_obj, UObject* to_obj) {
         if (insert_object_statement == nullptr || insert_ref_statement == nullptr
             || from_obj == nullptr || to_obj == nullptr) {
             return;
@@ -259,8 +279,6 @@ auto create_insert_ref_lambda(void) {
             return;
         }
     };
-
-    return std::make_tuple(insert_ref_statement != nullptr, insert_ref);
 }
 
 }  // namespace
@@ -276,15 +294,6 @@ void take_snapshot(void) {
     }
 
     // Some misc setup before we stop the world
-
-    size_t num_threads = std::thread::hardware_concurrency();
-    if (num_threads == 0) {
-        // May return 0 if not supported.
-        // Currently steam hardware survey says 6 and 8 cores are ~25% each, so lets go with the
-        // better of the two.
-        // NOLINTNEXTLINE(readability-magic-numbers)
-        num_threads = 8;
-    }
 
     std::vector<std::thread> threads{};
     threads.reserve(num_threads);
@@ -303,12 +312,12 @@ void take_snapshot(void) {
         auto end_idx = std::min(start_idx + objects_per_thread, num_objects);
         threads.emplace_back([start_idx, end_idx, &gobjects]() {
             // Need to create a seperate prepared starement/lambda on each thread
-            auto [success, insert_object] = create_insert_object_lambda();
-            if (!success) {
+            auto insert_object = create_insert_object_lambda();
+            if (insert_object == nullptr) {
                 return;
             }
-            auto [success2, insert_ref] = create_insert_ref_lambda();
-            if (!success2) {
+            auto insert_ref = create_insert_ref_lambda();
+            if (insert_ref == nullptr) {
                 return;
             }
 
@@ -325,7 +334,7 @@ void take_snapshot(void) {
                 }
 
                 insert_object(obj);
-                // TODO: check refs here
+                search_for_refs(obj, insert_ref);
             }
         });
     }

@@ -152,26 +152,38 @@ void draw_search_window(void) {
                                  - ImGui::CalcTextSize("Snapshot References").x
                                  - ImGui::GetStyle().ItemSpacing.x);
             if (ImGui::Button("Snapshot References")) {
+                LOG(MISC, "Taking snapshot");
                 refs::take_snapshot();
+                LOG(MISC, "Snapshot finished");
                 last_snapshot_time = next_time_text_update = std::chrono::steady_clock::now();
             }
 
             ImGui::TextWrapped("Taking a snapshot will freeze the game for several seconds.");
 
-#ifndef NDEBUG
-            ImGui::Text("Debug:");
-            ImGui::SameLine();
-            if (ImGui::Button("Import DB")) {
-                refs::import_db();
-                last_snapshot_time = next_time_text_update = std::chrono::steady_clock::now();
-            }
-            ImGui::SameLine();
-            ImGui::BeginDisabled(!refs::has_snapshot());
-            if (ImGui::Button("Export DB")) {
-                refs::export_db();
-            }
-            ImGui::EndDisabled();
+            static const bool show_debug =
+                unrealsdk::config::get_bool("live_object_explorer.db_debug")
+#ifdef NDEBUG
+                    .value_or(false);
+#else
+                    .value_or(true);
 #endif
+            if (show_debug) {
+                ImGui::SeparatorText("Debug");
+                if (ImGui::Button("Import DB")) {
+                    refs::import_db();
+                    last_snapshot_time = next_time_text_update = std::chrono::steady_clock::now();
+                }
+                ImGui::SameLine();
+                ImGui::BeginDisabled(!refs::has_snapshot());
+                if (ImGui::Button("Export DB")) {
+                    refs::export_db();
+                }
+                ImGui::EndDisabled();
+                const uint32_t thread_min = 1;
+                const uint32_t thread_max = 32;
+                ImGui::SliderScalar("Threads", ImGuiDataType_U32, &refs::num_threads, &thread_min,
+                                    &thread_max);
+            }
         } else {
             ImGui::GetCurrentWindow()->WindowPadding.x = old_padding;
         }

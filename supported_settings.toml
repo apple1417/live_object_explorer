@@ -18,3 +18,6 @@ default_window_size = { x = 600, y = 600 }
 # This is very noticeable on the titlebar, the scrollbar, the resize column, and any disabled text.
 # The issue only seems to happen to people running dx12 on an AMD gpu - hence the name.
 amd_dx12_hack = false
+
+# Exposes a few extra settings which help debug issues with the references database
+db_debug = false

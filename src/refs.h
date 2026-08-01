@@ -5,6 +5,9 @@
 
 namespace live_object_explorer::refs {
 
+// Variable controlling how many threads we use while taking a snapshot.
+extern uint32_t num_threads;
+
 /**
  * @brief Checks if we have a refs snapshot, and are able to search.
  *
