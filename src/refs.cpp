@@ -145,35 +145,50 @@ std::shared_ptr<sqlite3_stmt> prepare_statement(std::string_view query) {
  * @return A tuple of a success bool, and the lambda.
  */
 auto create_insert_object_lambda(void) {
-    auto insert_object_statement = prepare_statement(R"==(
-        INSERT OR IGNORE INTO
-            Objects (Pointer)
+    auto upsert_object_statement = prepare_statement(R"==(
+        INSERT INTO
+            Objects (Pointer, Name)
         VALUES
-            (?)
+            (:pointer, :name)
+        ON CONFLICT(Pointer) DO UPDATE SET
+            Name = :name
     )==");
 
-    auto insert_object = [insert_object_statement](UObject* obj) {
-        if (insert_object_statement == nullptr || obj == nullptr) {
+    auto insert_object = [upsert_object_statement](UObject* obj) {
+        if (upsert_object_statement == nullptr || obj == nullptr) {
             return;
         }
-        sqlite3_reset(insert_object_statement.get());
+        sqlite3_reset(upsert_object_statement.get());
 
         auto pointer = static_cast<sqlite_int64>(reinterpret_cast<intptr_t>(obj));
-        auto res = sqlite3_bind_int64(insert_object_statement.get(), 1, pointer);
+        auto name = obj->get_path_name();
+
+        auto res = sqlite3_bind_int64(upsert_object_statement.get(), 1, pointer);
         if (res != SQLITE_OK) {
-            LOG(ERROR, "Failed to bind 'object' in 'insert object' query: {}", sqlite3_errstr(res));
+            LOG(ERROR, "Failed to bind 'object' in 'upsert object' query: {}", sqlite3_errstr(res));
             BREAKPOINT();
             return;
         }
 
-        res = sqlite3_step(insert_object_statement.get());
+        static_assert(sizeof(wchar_t) == sizeof(char16_t));
+        res = sqlite3_bind_text16(upsert_object_statement.get(), 2, name.c_str(),
+                                  static_cast<int>(name.size() * sizeof(wchar_t)),
+                                  // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
+                                  SQLITE_TRANSIENT);
+        if (res != SQLITE_OK) {
+            LOG(ERROR, "Failed to bind 'name' in 'upsert object' query: {}", sqlite3_errstr(res));
+            BREAKPOINT();
+            return;
+        }
+
+        res = sqlite3_step(upsert_object_statement.get());
         if (res != SQLITE_DONE) {
-            LOG(ERROR, "Failed to step 'insert object' query: {}", sqlite3_errmsg(database.get()));
+            LOG(ERROR, "Failed to step 'upsert object' query: {}", sqlite3_errmsg(database.get()));
             BREAKPOINT();
             return;
         }
     };
-    return std::make_tuple(insert_object_statement != nullptr, insert_object);
+    return std::make_tuple(upsert_object_statement != nullptr, insert_object);
 }
 
 /**
@@ -182,17 +197,27 @@ auto create_insert_object_lambda(void) {
  * @return A tuple of a success bool, and the lambda.
  */
 auto create_insert_ref_lambda(void) {
+    // We know the from object must already have been inserted, so only need to add the to object
+    auto insert_object_statement = prepare_statement(R"==(
+        INSERT OR IGNORE INTO
+            Objects (Pointer)
+        VALUES
+            (:to)
+    )==");
     auto insert_ref_statement = prepare_statement(R"==(
         INSERT OR IGNORE INTO
             Refs (FromPointer, ToPointer)
         VALUES
-            (?, ?)
+            (:from, :to)
     )==");
 
-    auto insert_ref = [insert_ref_statement](UObject* from_obj, UObject* to_obj) {
-        if (insert_ref_statement == nullptr || from_obj == nullptr || to_obj == nullptr) {
+    auto insert_ref = [insert_object_statement, insert_ref_statement](UObject* from_obj,
+                                                                      UObject* to_obj) {
+        if (insert_object_statement == nullptr || insert_ref_statement == nullptr
+            || from_obj == nullptr || to_obj == nullptr) {
             return;
         }
+        sqlite3_reset(insert_object_statement.get());
         sqlite3_reset(insert_ref_statement.get());
 
         auto from_pointer = static_cast<sqlite_int64>(reinterpret_cast<intptr_t>(from_obj));
@@ -205,9 +230,24 @@ auto create_insert_ref_lambda(void) {
             BREAKPOINT();
             return;
         }
+
+        res = sqlite3_bind_int64(insert_object_statement.get(), 1, to_pointer);
+        if (res != SQLITE_OK) {
+            LOG(ERROR, "Failed to bind 'to object' in 'insert object' query: {}",
+                sqlite3_errstr(res));
+            BREAKPOINT();
+            return;
+        }
         res = sqlite3_bind_int64(insert_ref_statement.get(), 2, to_pointer);
         if (res != SQLITE_OK) {
             LOG(ERROR, "Failed to bind 'to object' in 'insert ref' query: {}", sqlite3_errstr(res));
+            BREAKPOINT();
+            return;
+        }
+
+        res = sqlite3_step(insert_object_statement.get());
+        if (res != SQLITE_DONE) {
+            LOG(ERROR, "Failed to step 'insert object' query: {}", sqlite3_errmsg(database.get()));
             BREAKPOINT();
             return;
         }
@@ -216,66 +256,11 @@ auto create_insert_ref_lambda(void) {
         if (res != SQLITE_DONE) {
             LOG(ERROR, "Failed to step 'insert ref' query: {}", sqlite3_errmsg(database.get()));
             BREAKPOINT();
+            return;
         }
     };
 
     return std::make_tuple(insert_ref_statement != nullptr, insert_ref);
-}
-
-/**
- * @brief Creates a lambda to update an object's name.
- *
- * @return A tuple of a success bool, and the lambda.
- */
-auto create_update_object_name_lambda(void) {
-    auto update_object_name_statement = prepare_statement(R"==(
-        UPDATE
-            Objects
-        SET
-            Name = ?
-        WHERE
-            Pointer = ?
-    )==");
-    auto update_object_name = [update_object_name_statement](UObject* obj) {
-        if (update_object_name_statement == nullptr || obj == nullptr) {
-            return;
-        }
-        sqlite3_reset(update_object_name_statement.get());
-
-        auto name = obj->get_path_name();
-        auto pointer = static_cast<sqlite_int64>(reinterpret_cast<intptr_t>(obj));
-
-        static_assert(sizeof(wchar_t) == sizeof(char16_t));
-        auto res = sqlite3_bind_text16(update_object_name_statement.get(), 1, name.c_str(),
-                                       static_cast<int>(name.size() * sizeof(wchar_t)),
-                                       // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
-                                       SQLITE_TRANSIENT);
-        if (res != SQLITE_OK) {
-            LOG(ERROR, "Failed to bind 'name' in 'update object name' query: {}",
-                sqlite3_errstr(res));
-
-            BREAKPOINT();
-
-            return;
-        }
-
-        res = sqlite3_bind_int64(update_object_name_statement.get(), 2, pointer);
-        if (res != SQLITE_OK) {
-            LOG(ERROR, "Failed to bind 'object' in 'update object name' query: {}",
-                sqlite3_errstr(res));
-            BREAKPOINT();
-            return;
-        }
-
-        res = sqlite3_step(update_object_name_statement.get());
-        if (res != SQLITE_DONE) {
-            LOG(ERROR, "Failed to step 'update object name' query: {}",
-                sqlite3_errmsg(database.get()));
-            BREAKPOINT();
-        }
-    };
-
-    return std::make_tuple(update_object_name_statement != nullptr, update_object_name);
 }
 
 }  // namespace
@@ -322,9 +307,8 @@ void take_snapshot(void) {
             if (!success) {
                 return;
             }
-            // TODO: should only really be doing names at the end, outside of this
-            auto [success2_tmp, update_object_name] = create_update_object_name_lambda();
-            if (!success2_tmp) {
+            auto [success2, insert_ref] = create_insert_ref_lambda();
+            if (!success2) {
                 return;
             }
 
@@ -342,8 +326,6 @@ void take_snapshot(void) {
 
                 insert_object(obj);
                 // TODO: check refs here
-                // TODO: only check names at the end, outside of this loop
-                update_object_name(obj);
             }
         });
     }
