@@ -15,7 +15,8 @@ DelegateComponent::DelegateComponent(std::string&& name,
     : AbstractComponent(std::move(name)),
       addr(addr),
       signature(signature),
-      func_name_pending_edit(false) {}
+      func_name_pending_edit(false),
+      known_bad_func_name(false) {}
 
 void DelegateComponent::draw_editable(UObject* current_obj) {
     /*
@@ -49,6 +50,7 @@ void DelegateComponent::draw_editable(UObject* current_obj) {
             ImGui::PopStyleColor();
         }
         this->func_name_pending_edit = false;
+        this->known_bad_func_name = false;
 
         if (current_obj == nullptr) {
             // If the object is null, allow setting the name to anything
@@ -114,6 +116,7 @@ void DelegateComponent::draw(const ObjectWindowSettings& settings,
             this->cached_func_name = this->last_func_name;
         }
         this->func_name_pending_edit = false;
+        this->known_bad_func_name = false;
     }
 
     ImGui::TextUnformatted(this->name.c_str());
@@ -124,15 +127,27 @@ void DelegateComponent::draw(const ObjectWindowSettings& settings,
     } else if (current_obj == nullptr) {
         ImGui::TextDisabled("%s", NULL_OBJECT_NAME.c_str());
     } else {
-        object_link(this->cached_func_name, [&]() -> FFieldVariant {
-            auto ret = current_obj->Class()->find(this->last_func_name);
-            // Need to re-convert to a FFieldVariant, since find may return a stub, and it always
-            // returns a UStruct rather than a UObject
-            if (ret.is_ffield()) {
-                return ret.as_ffield();
-            }
-            return ret.as_uobject();
-        });
+        if (this->known_bad_func_name) {
+            ImGui::TextDisabled("%s", this->cached_func_name.c_str());
+        } else {
+            object_link(this->cached_func_name, [&]() -> FFieldVariant {
+                try {
+                    // Well you know that big comment about always keeping objects valid? Turns out
+                    // the game doesn't always do so, it is possible for this find call to fail.
+                    auto ret = current_obj->Class()->find(this->last_func_name);
+
+                    // Need to re-convert to a FFieldVariant, since find may return a stub, and it
+                    // always returns a UStruct rather than a UObject
+                    if (ret.is_ffield()) {
+                        return ret.as_ffield();
+                    }
+                    return ret.as_uobject();
+                } catch (...) {
+                    this->known_bad_func_name = true;
+                    return nullptr;
+                }
+            });
+        }
         ImGui::SameLine();
         ImGui::Text("on");
         ImGui::SameLine();

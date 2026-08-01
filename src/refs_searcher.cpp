@@ -340,11 +340,13 @@ void find_property_refs(ZDelegateProperty* prop,
                         uintptr_t base_addr,
                         UObject* obj,
                         const refs_callback& callback) {
-    auto delegate = get_property(prop, idx, base_addr);
-    if (delegate.has_value()) {
-        callback(obj, delegate->object);
-        callback(obj, delegate->func);
-    }
+    try {
+        auto delegate = get_property(prop, idx, base_addr);
+        if (delegate.has_value()) {
+            callback(obj, delegate->object);
+            callback(obj, delegate->func);
+        }
+    } catch (...) {}
 }
 
 template <>
@@ -394,10 +396,22 @@ void find_property_refs(ZMulticastDelegateProperty* prop,
                         UObject* obj,
                         const refs_callback& callback) {
     auto delegate = get_property(prop, idx, base_addr);
-    for (size_t i = 0; i < delegate.base->size() - 1; i++) {
-        auto func = delegate.base->data[i].as_function();
-        callback(obj, func->object);
-        callback(obj, func->func);
+    for (size_t i = 0; i < delegate.base->size(); i++) {
+        auto bound_obj = delegate.base->data[i].get_object();
+        if (bound_obj == nullptr) {
+            continue;
+        }
+        callback(obj, bound_obj);
+
+        UObject* func = nullptr;
+        try {
+            // The game can create invalid delegates sometimes, meaning this find call can fail
+            static_assert(!std::is_base_of_v<FField, UFunction>);
+            func = bound_obj->Class()->find(delegate.base->data[i].func_name).as_uobject();
+        } catch (...) {
+            continue;
+        }
+        callback(obj, func);
     }
 }
 

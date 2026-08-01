@@ -18,6 +18,7 @@ class DelegateComponent : public AbstractComponent {
     CachedObjLink cached_obj;
 
     bool func_name_pending_edit;
+    bool known_bad_func_name;
 
     void draw_editable(unrealsdk::unreal::UObject* current_obj);
 
