@@ -62,7 +62,7 @@ void find_native_refs(UEnum* obj, const refs_callback& callback) {
     find_native_refs<UField>(obj, callback);
 }
 
-// We can only hold UObject refs, so if properties are fields we need to exlude them here
+// We can only hold UObject refs, so if properties are fields we need to exclude them here
 #if !UNREALSDK_PROPERTIES_ARE_FFIELD
 template <>
 void find_native_refs(ZProperty* obj, const refs_callback& callback) {
@@ -558,7 +558,7 @@ void search_for_refs(UObject* from_obj, const refs_callback& callback) {
         cast<cast_options<false, true>>(
             prop,
             [base_addr, from_obj, &callback]<typename T>(T* prop) {
-                auto array_dim = (size_t)prop->ArrayDim();
+                auto array_dim = static_cast<size_t>(prop->ArrayDim());
                 for (size_t i = 0; i < array_dim; i++) {
                     find_property_refs<T>(prop, i, base_addr, from_obj, callback);
                 }

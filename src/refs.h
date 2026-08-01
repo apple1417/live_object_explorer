@@ -9,7 +9,7 @@ namespace live_object_explorer::refs {
 extern uint32_t num_threads;
 
 /**
- * @brief Initalizes the references modules.
+ * @brief Initializes the references modules.
  */
 void init(void);
 

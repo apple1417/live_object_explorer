@@ -82,7 +82,7 @@ std::filesystem::path get_local_db_path(void) {
 /**
  * @brief Wipes and creates a new database.
  *
- * @return True if sucessfully created, false on any error.
+ * @return True if successfully created, false on any error.
  */
 bool create_new_db(void) {
     database = open_db(":memory:");
@@ -102,7 +102,7 @@ bool create_new_db(void) {
         return true;
     };
 
-    // Keep foreign_keys in a seperate statement to be safe
+    // Keep foreign_keys in a separate statement to be safe
     return exec("PRAGMA foreign_keys = ON") && exec(R"==(
         CREATE TABLE Objects (
             Pointer     INTEGER NOT NULL UNIQUE,
@@ -304,7 +304,7 @@ void take_snapshot(void) {
     practice, sqlite only allows a single writer at a time, so benchmarks have shown this doesn't
     really significantly change the snapshotting time.
 
-    Theory for a real improvement: Maybe we can create a seperate database per thread, and only
+    Theory for a real improvement: Maybe we can create a separate database per thread, and only
     merge them at the end. This sounds complicated, and snapshot times aren't *that bad*, so leaving
     it for now.
     */
@@ -325,7 +325,7 @@ void take_snapshot(void) {
     for (size_t start_idx = 0; start_idx < num_objects; start_idx += objects_per_thread) {
         auto end_idx = std::min(start_idx + objects_per_thread, num_objects);
         threads.emplace_back([start_idx, end_idx, &gobjects]() {
-            // Need to create a seperate prepared statement/lambda on each thread
+            // Need to create a separate prepared statement/lambda on each thread
             auto insert_object = create_insert_object_lambda();
             if (insert_object == nullptr) {
                 return;
@@ -440,11 +440,11 @@ void export_db(void) {
 }
 
 void init(void) {
-    // The only thing there actually is to initalise is reading your threads setting
+    // The only thing there actually is to initialise is reading your threads setting
     auto setting = unrealsdk::config::get_int("live_object_explorer.snapshot_threads");
     constexpr auto threshold = 64;
     if (setting.has_value() && 1 <= *setting && *setting <= threshold) {
-        num_threads = (uint32_t)*setting;
+        num_threads = static_cast<uint32_t>(*setting);
     }
 };
 
