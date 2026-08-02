@@ -18,7 +18,8 @@ const std::string TITLE_STR = std::format("Live Object Explorer (v{}, {}{})###Li
                                           std::string_view(GIT_HEAD_SHA1).substr(0, GIT_HASH_CHARS),
                                           GIT_IS_DIRTY ? ", dirty" : "");
 
-// NOLINTNEXTLINE(performance-enum-size)
+// Deliberately not using an enum class so that these easily convert to ints for use with imgui
+// NOLINTNEXTLINE(performance-enum-size, cppcoreguidelines-use-enum-class)
 enum SearchMode {
     SM_LIVE,
     SM_SNAPSHOT_ENTRIES,

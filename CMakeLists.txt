@@ -57,6 +57,10 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(sqlite3_amalgamation)
 add_library(sqlite3 OBJECT "${sqlite3_amalgamation_SOURCE_DIR}/sqlite3.c")
 target_include_directories(sqlite3 PUBLIC "${sqlite3_amalgamation_SOURCE_DIR}")
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    # Sqlite uses a few intrinsics which clang doesn't implement, but it compiles fine ignoring them
+    target_compile_options(sqlite3 PRIVATE -Wno-ignored-pragma-intrinsic)
+endif()
 
 set(UNREALSDK_SHARED True)
 add_subdirectory(libs/unrealsdk EXCLUDE_FROM_ALL)
