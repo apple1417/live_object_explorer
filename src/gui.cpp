@@ -18,8 +18,17 @@ const std::string TITLE_STR = std::format("Live Object Explorer (v{}, {}{})###Li
                                           std::string_view(GIT_HEAD_SHA1).substr(0, GIT_HASH_CHARS),
                                           GIT_IS_DIRTY ? ", dirty" : "");
 
+// NOLINTNEXTLINE(performance-enum-size)
+enum SearchMode {
+    SM_LIVE,
+    SM_SNAPSHOT_ENTRIES,
+    SM_REFERENCES_TO,
+    SM_REFERENCES_FROM,
+};
+
 bool search_window_open = false;
-bool search_for_refs = false;
+int search_mode = SearchMode::SM_LIVE;
+bool highlight_take_snapshot = false;
 
 using time_point = std::chrono::time_point<std::chrono::steady_clock>;
 time_point last_snapshot_time = time_point::min();
@@ -29,15 +38,11 @@ std::string last_snapshot_time_text = "Never";
 // NOLINTNEXTLINE(readability-magic-numbers)
 std::array<char, 1024> search_query{};
 
-std::vector<std::pair<std::string, WeakPointer>> search_results{};
+std::vector<SearchResult> search_results{};
 size_t selected_search_idx = 0;
 ImGuiTextFilter search_filter;
 
-void do_search(void) {
-    search_filter.Clear();
-    search_results.clear();
-    selected_search_idx = 0;
-
+void do_live_search(void) {
     std::string_view search{search_query.data()};
     auto first_non_space =
         std::ranges::find_if_not(search, [](auto chr) { return std::isspace(chr); });
@@ -69,19 +74,55 @@ void do_search(void) {
     std::ranges::copy(unrealsdk::gobjects() | std::views::filter([cls](auto obj) {
                           return obj->is_instance(cls);
                       }) | std::views::transform([](auto obj) {
-                          return std::make_pair<std::string, WeakPointer>(
-                              unrealsdk::utils::narrow(obj->get_path_name()), obj);
+                          return SearchResult{unrealsdk::utils::narrow(obj->get_path_name()), obj};
                       }),
                       std::back_inserter(search_results));
 }
 
+void do_search(void) {
+    search_filter.Clear();
+    search_results.clear();
+    selected_search_idx = 0;
+
+    switch (search_mode) {
+        case SM_LIVE:
+            do_live_search();
+            break;
+        case SM_SNAPSHOT_ENTRIES:
+            refs::search_names(std::string_view{search_query.data()}, search_results);
+            break;
+        case SM_REFERENCES_TO:
+            refs::search_refs_to(std::string_view{search_query.data()}, search_results);
+            break;
+        case SM_REFERENCES_FROM:
+            refs::search_refs_from(std::string_view{search_query.data()}, search_results);
+            break;
+    }
+}
+
 }  // namespace
 
-void search(std::string_view query) {
+void search_cmd(std::string_view query) {
     auto size = std::min(query.size(), search_query.size() - 1);
     memcpy(search_query.data(), query.data(), size);
     search_query.at(size) = '\0';
 
+    search_mode = SearchMode::SM_LIVE;
+
+    do_search();
+}
+
+void search_refs_to(std::string_view query) {
+    auto size = std::min(query.size(), search_query.size() - 1);
+    memcpy(search_query.data(), query.data(), size);
+    search_query.at(size) = '\0';
+
+    if (!refs::has_snapshot()) {
+        highlight_take_snapshot = true;
+        return;
+    }
+
+    search_mode = SearchMode::SM_REFERENCES_TO;
     do_search();
 }
 
@@ -118,15 +159,26 @@ void draw_search_window(void) {
         auto old_padding = ImGui::GetCurrentWindow()->WindowPadding.x;
         ImGui::GetCurrentWindow()->WindowPadding.x = 0;
 
-        if (ImGui::TreeNodeEx("References",
+        if (highlight_take_snapshot) {
+            ImGui::SetNextItemOpen(true);
+        }
+        if (ImGui::TreeNodeEx("Search Settings",
                               ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_NoTreePushOnOpen)) {
             ImGui::GetCurrentWindow()->WindowPadding.x = old_padding;
 
+            ImGui::Text("Search for:");
+            ImGui::RadioButton("Live Objects", &search_mode, SearchMode::SM_LIVE);
+
+            auto add_tooltip = refs::has_snapshot() ? []() {} : []() {
+                ImGui::SetItemTooltip("Take a snapshot first");
+            };
             ImGui::BeginDisabled(!refs::has_snapshot());
-            ImGui::Checkbox("Search for References", &search_for_refs);
-            if (!refs::has_snapshot()) {
-                ImGui::SetItemTooltip("Take a snapshot to be able to search for references");
-            }
+            ImGui::RadioButton("Snapshot Entries", &search_mode, SearchMode::SM_SNAPSHOT_ENTRIES);
+            add_tooltip();
+            ImGui::RadioButton("References To", &search_mode, SearchMode::SM_REFERENCES_TO);
+            add_tooltip();
+            ImGui::RadioButton("References From", &search_mode, SearchMode::SM_REFERENCES_FROM);
+            add_tooltip();
             ImGui::EndDisabled();
 
             if (refs::has_snapshot()) {
@@ -149,16 +201,22 @@ void draw_search_window(void) {
             ImGui::Text("Last Snapshot: %s", last_snapshot_time_text.c_str());
             ImGui::SameLine();
             ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x
-                                 - ImGui::CalcTextSize("Snapshot References").x
+                                 - ImGui::CalcTextSize("Take Snapshot").x
                                  - ImGui::GetStyle().ItemSpacing.x);
-            if (ImGui::Button("Snapshot References")) {
+
+            if (ImGui::Button("Take Snapshot")) {
                 LOG(MISC, "Taking snapshot");
                 refs::take_snapshot();
                 LOG(MISC, "Snapshot finished");
                 last_snapshot_time = next_time_text_update = std::chrono::steady_clock::now();
             }
+            if (highlight_take_snapshot) {
+                ImGui::FocusItem();
+                ImGui::SetNavCursorVisible(true);
+                highlight_take_snapshot = false;
+            }
 
-            ImGui::TextWrapped("Taking a snapshot will freeze the game as much as a minute.");
+            ImGui::TextWrapped("Taking a snapshot will freeze the game for as much as a minute.");
 
             static const bool show_debug =
                 unrealsdk::config::get_bool("live_object_explorer.db_debug")
@@ -194,27 +252,50 @@ void draw_search_window(void) {
 
         if (ImGui::BeginListBox("##search_results", ImVec2{-FLT_MIN, -below_listbox_height})) {
             for (size_t i = 0; i < search_results.size(); i++) {
-                auto& [name, ptr] = search_results.at(i);
-                if (!search_filter.PassFilter(name.c_str())) {
+                auto& res = search_results.at(i);
+                if (!search_filter.PassFilter(res.name.c_str())) {
                     continue;
                 }
 
+                const bool disabled = (res.flags & SearchResult::NOT_LIVE) == 0 && !res.ptr;
                 const bool is_selected = selected_search_idx == i;
-                const bool still_loaded = static_cast<bool>(ptr);
 
-                if (ImGui::Selectable(name.c_str(), is_selected,
-                                      still_loaded ? 0 : ImGuiSelectableFlags_Disabled)) {
+                // If the lookup failed, copy the disabled styling, but don't actually disable it
+                // This means you can select it again later, to check if it exists then
+                auto old_alpha = ImGui::GetStyle().Alpha;
+                if (!disabled && (res.flags & SearchResult::LOOKUP_FAILED) != 0) {
+                    ImGui::GetStyle().Alpha *= ImGui::GetStyle().DisabledAlpha;
+                }
+
+                if (ImGui::Selectable(res.name.c_str(), is_selected,
+                                      disabled ? ImGuiSelectableFlags_Disabled : 0)) {
                     selected_search_idx = i;
                 }
+
+                ImGui::GetStyle().Alpha = old_alpha;
 
                 if (is_selected) {
                     ImGui::SetItemDefaultFocus();
                 }
 
-                if (still_loaded && ImGui::IsItemHovered()
+                if (ImGui::IsItemHovered()
                     && (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)
                         || ImGui::IsKeyPressed(ImGuiKey_Enter))) {
-                    open_object_window(*ptr);
+                    if ((res.flags & SearchResult::NOT_LIVE) == 0) {
+                        if (!disabled) {
+                            open_object_window(*(res.ptr));
+                        }
+                    } else {
+                        // Allow searching for a disabled object again, in case it exists now
+                        auto obj =
+                            unrealsdk::find_object(L"Object", unrealsdk::utils::widen(res.name));
+                        if (obj == nullptr) {
+                            res.flags |= SearchResult::LOOKUP_FAILED;
+                        } else {
+                            res.flags &= ~SearchResult::LOOKUP_FAILED;
+                            open_object_window(obj);
+                        }
+                    }
                 }
             }
             ImGui::EndListBox();

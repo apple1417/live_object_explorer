@@ -27,7 +27,7 @@ DWORD WINAPI live_oe_startup(LPVOID /*unused*/) {
                     gui::show();
                     auto args = std::wstring_view{line, len}.substr(cmd_len);
                     if (!args.empty()) {
-                        gui::search(unrealsdk::utils::narrow(args));
+                        gui::search_cmd(unrealsdk::utils::narrow(args));
                     }
                 })) {
             LOG(ERROR, "Failed to add '{}' command", cmd);

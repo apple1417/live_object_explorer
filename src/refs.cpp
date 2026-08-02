@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "refs.h"
+#include "gui.h"
 #include "refs_searcher.h"
 
 #ifdef __clang__
@@ -121,15 +122,17 @@ bool create_new_db(void) {
 }
 
 /**
- * @brief Prepares a (long term) sqlite query.
+ * @brief Prepares a sqlite query.
  *
  * @param query The query to prepare.
+ * @param persistent If to mark this as a persistent query.
  * @return A pointer to the prepared statement, or null on error.
  */
-std::shared_ptr<sqlite3_stmt> prepare_statement(std::string_view query) {
+std::shared_ptr<sqlite3_stmt> prepare_statement(std::string_view query, bool persistent = true) {
     sqlite3_stmt* raw_statement = nullptr;
-    auto res = sqlite3_prepare_v3(database.get(), query.data(), static_cast<int>(query.size() + 1),
-                                  SQLITE_PREPARE_PERSISTENT, &raw_statement, nullptr);
+    auto res =
+        sqlite3_prepare_v3(database.get(), query.data(), static_cast<int>(query.size() + 1),
+                           persistent ? SQLITE_PREPARE_PERSISTENT : 0, &raw_statement, nullptr);
     if (res != SQLITE_OK) {
         LOG(ERROR, "Failed to prepare statement: {}", sqlite3_errmsg(database.get()));
         BREAKPOINT();
@@ -201,7 +204,7 @@ std::function<void(UObject*)> create_insert_object_lambda(void) {
  *
  * @return The lambda, or null on failure.
  */
-refs_callback create_insert_ref_lambda(void) {
+internal::refs_callback create_insert_ref_lambda(void) {
     // We know the from object must already have been inserted, so only need to add the to object
     auto insert_object_statement = prepare_statement(R"==(
         INSERT OR IGNORE INTO
@@ -271,6 +274,51 @@ refs_callback create_insert_ref_lambda(void) {
             return;
         }
     };
+}
+
+/**
+ * @brief Perform a simple search, using a query with one arg that only returns names.
+ *
+ * @param name The object name to search for.
+ * @param search_results A vector to append search results to.
+ * @param query_name A name for the query, to use in error messages.
+ * @param query The query to run.
+ */
+void do_search(std::string_view name,
+               std::vector<gui::SearchResult>& search_results,
+               std::string_view query_name,
+               const char* query) {
+    if (!database) {
+        return;
+    }
+    auto statement = prepare_statement(query, false);
+    if (statement == nullptr) {
+        return;
+    }
+
+    auto res = sqlite3_bind_text(statement.get(), 1, name.data(), static_cast<int>(name.size()),
+                                 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
+                                 SQLITE_STATIC);
+    if (res != SQLITE_OK) {
+        LOG(ERROR, "Failed to bind 'name' in '{}' query: {}", query_name, sqlite3_errstr(res));
+        BREAKPOINT();
+        return;
+    }
+
+    while (true) {
+        res = sqlite3_step(statement.get());
+        if (res == SQLITE_DONE) {
+            return;
+        }
+        if (res != SQLITE_ROW) {
+            LOG(ERROR, "Failed to step '{}' query: {}", query_name, sqlite3_errmsg(database.get()));
+            BREAKPOINT();
+            return;
+        }
+
+        auto output_name = reinterpret_cast<const char*>(sqlite3_column_text(statement.get(), 0));
+        search_results.emplace_back(std::string(output_name), nullptr, gui::SearchResult::NOT_LIVE);
+    }
 }
 
 }  // namespace
@@ -348,13 +396,62 @@ void take_snapshot(void) {
                 }
 
                 insert_object(obj);
-                search_for_refs(obj, insert_ref);
+                internal::search_for_refs(obj, insert_ref);
             }
         });
     }
     for (auto& thread : threads) {
         thread.join();
     }
+}
+
+void search_names(std::string_view name, std::vector<gui::SearchResult>& search_results) {
+    do_search(name, search_results, "search names", R"==(
+        SELECT DISTINCT
+            Name
+        FROM
+            Objects
+        WHERE
+            Name like ('%' || ? || '%') ESCAPE '\'
+    )==");
+}
+
+void search_refs_to(std::string_view name, std::vector<gui::SearchResult>& search_results) {
+    do_search(name, search_results, "search refs to", R"==(
+        SELECT DISTINCT
+            Name
+        FROM
+            Objects, Refs
+        WHERE
+            Pointer = FromPointer
+            and ToPointer = (
+                SELECT
+                    Pointer
+                FROM
+                    Objects
+                WHERE
+                    Name = ?
+            )
+    )==");
+}
+
+void search_refs_from(std::string_view name, std::vector<gui::SearchResult>& search_results) {
+    do_search(name, search_results, "search refs from", R"==(
+        SELECT DISTINCT
+            Name
+        FROM
+            Objects, Refs
+        WHERE
+            Pointer = ToPointer
+            and FromPointer = (
+                SELECT
+                    Pointer
+                FROM
+                    Objects
+                WHERE
+                    Name = ?
+            )
+    )==");
 }
 
 void import_db(void) {

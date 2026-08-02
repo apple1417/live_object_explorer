@@ -2,9 +2,10 @@
 #include "object_window.h"
 #include "component_picker.h"
 #include "components/abstract.h"
-#include "imgui.h"
+#include "gui.h"
 #include "native_section.h"
 #include "object_link.h"
+#include "refs.h"
 
 using namespace unrealsdk::unreal;
 
@@ -76,6 +77,9 @@ void ObjectWindow::draw() {
     if (ImGui::BeginMenuBar()) {
         ImGui::MenuItem("Enable Editing", nullptr, &this->settings.editable);
         ImGui::MenuItem("Hex Integers", nullptr, &this->settings.hex);
+        if (ImGui::MenuItem("Refs", nullptr, false, this->ptr && this->ffield == nullptr)) {
+            gui::search_refs_to(unrealsdk::utils::narrow((*this->ptr)->get_path_name()));
+        }
 
         ImGui::EndMenuBar();
     }

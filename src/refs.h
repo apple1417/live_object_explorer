@@ -2,6 +2,7 @@
 #define REFS_H
 
 #include "pch.h"
+#include "gui.h"
 
 namespace live_object_explorer::refs {
 
@@ -34,6 +35,30 @@ void import_db(void);
  * @brief Exports the refs db to disk.
  */
 void export_db(void);
+
+/**
+ * @brief Search for object names in the db.
+ *
+ * @param name The object name to search for.
+ * @param search_results A vector to append search results to.
+ */
+void search_names(std::string_view name, std::vector<gui::SearchResult>& search_results);
+
+/**
+ * @brief Search for references to the given object.
+ *
+ * @param name The object name to search for.
+ * @param search_results A vector to append search results to.
+ */
+void search_refs_to(std::string_view name, std::vector<gui::SearchResult>& search_results);
+
+/**
+ * @brief Search for references from the given object.
+ *
+ * @param name The object name to search for.
+ * @param search_results A vector to append search results to.
+ */
+void search_refs_from(std::string_view name, std::vector<gui::SearchResult>& search_results);
 
 }  // namespace live_object_explorer::refs
 

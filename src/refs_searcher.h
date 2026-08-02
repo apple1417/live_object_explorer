@@ -3,7 +3,7 @@
 
 #include "pch.h"
 
-namespace live_object_explorer::refs {
+namespace live_object_explorer::refs::internal {
 
 using refs_callback =
     std::function<void(unrealsdk::unreal::UObject* from_obj, unrealsdk::unreal::UObject* to_obj)>;
@@ -16,6 +16,6 @@ using refs_callback =
  */
 void search_for_refs(unrealsdk::unreal::UObject* from_obj, const refs_callback& callback);
 
-}  // namespace live_object_explorer::refs
+}  // namespace live_object_explorer::refs::internal
 
 #endif /* REFS_SEARCHER_H */

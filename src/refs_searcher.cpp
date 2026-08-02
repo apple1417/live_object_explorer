@@ -3,7 +3,7 @@
 
 using namespace unrealsdk::unreal;
 
-namespace live_object_explorer::refs {
+namespace live_object_explorer::refs::internal {
 
 /**
  * @brief Finds any refs in native fields on the object.
@@ -568,4 +568,4 @@ void search_for_refs(UObject* from_obj, const refs_callback& callback) {
     }
 }
 
-}  // namespace live_object_explorer::refs
+}  // namespace live_object_explorer::refs::internal
